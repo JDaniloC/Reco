@@ -22,8 +22,11 @@ async function fetchAgreement(cpfDevedor: string) {
     })) as DevedorAcordo;
 }
 
-async function fetchAcceptAgreement(cpf: string, newProposal: Proposta) {
-  return (await fetch(`${serverURL}/api/proposal/${cpf}/`, {
+async function fetchAcceptAgreement(
+  identifier: string,
+  newProposal: Proposta
+) {
+  return (await fetch(`${serverURL}/api/proposal/${identifier}/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -66,7 +69,7 @@ export default function AgreementStatus({ params }: AgreementStatusProps) {
 
     setIsLoading(true);
     const response = await fetchAcceptAgreement(
-      params.cpfDevedor,
+      agreement.acordo.identificador,
       lastAgreement
     );
     agreement.acordo.status = response.status;
