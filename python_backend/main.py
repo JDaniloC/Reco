@@ -1,5 +1,10 @@
+from email_utils import send_email_notification
 from pydantic import BaseModel
+from dotenv import load_dotenv
 import socketio
+import os
+
+env_config = load_dotenv(".env")
 
 class Session(BaseModel):
     email: str
@@ -8,6 +13,7 @@ class Notification(BaseModel):
     type: str
     email: str
     message: str
+    tenantCpf: str
     tenantName: str
     condominiumName: str
 
@@ -17,6 +23,17 @@ app = socketio.ASGIApp(sio)
 
 connections: dict[str, str] = dict()
 messages_queue: dict[str, Notification] = dict()
+
+def notificate_email(receiver_email: str, cpf_devedor: str):
+    address_key = "EMAIL_ADDRESS"
+    pass_key = "EMAIL_PASSWORD"
+    email_address = os.getenv(address_key) or os.environ.get(address_key)
+    email_password = os.getenv(pass_key) or os.environ.get(pass_key)
+
+    if email_address and email_password:
+        return send_email_notification(email_address, email_password,
+                                       receiver_email, cpf_devedor)
+    return False
 
 @sio.event
 def connect(sid: str, environ: dict):
@@ -37,14 +54,18 @@ async def connect(sid: str, environ: dict, auth: Session):
 @sio.on('notificate')
 async def notification_handler(sid: str, data: Notification):
     validated_data = Notification(**data)
-    if validated_data.email in connections:
+    receiver_email = validated_data.email
+    if receiver_email in connections:
         del data["email"]
-        user_sid = connections[validated_data.email]
+        user_sid = connections[receiver_email]
         await sio.emit('notification', data, to=user_sid)
-    elif validated_data.email in messages_queue:
-        messages_queue[validated_data.email].append(data)
+    elif receiver_email in messages_queue:
+        messages_queue[receiver_email].append(data)
     else:
-        messages_queue[validated_data.email] = [data]
+        messages_queue[receiver_email] = [data]
+
+    if validated_data.type == "Sucesso":
+        notificate_email(receiver_email, validated_data.tenantCpf)
 
 @sio.event
 async def disconnect(sid: str):
