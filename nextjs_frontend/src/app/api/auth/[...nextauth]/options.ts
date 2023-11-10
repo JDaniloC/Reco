@@ -48,6 +48,9 @@ export const options: NextAuthOptions = {
 
       const data = await response.json();
       session.user = data;
+      if (session.user) {
+        session.user.name = data.nome;
+      }
 
       return session;
     },

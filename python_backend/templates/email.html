@@ -1,0 +1,43 @@
+<style type="text/css">
+  body,
+  html, 
+  .body {
+    background: #f3f3f3 !important;
+  }
+
+  .header {
+    background: #f3f3f3;
+  }
+</style>
+
+<spacer size="16"></spacer>
+
+<container>
+  <row>
+    <columns>
+
+      <spacer size="32"></spacer>
+
+      <center>
+        <img src="cid:logo" style="height: 200px;">
+      </center>
+
+      <spacer size="16"></spacer>
+
+      <h1 class="text-center">Negociação concluída!</h1>
+      
+      <spacer size="16"></spacer>
+
+      <p class="text-center">O devedor com o CPF {{ cpf_devedor }} chegou à uma decisão! </p>
+      <a class="large expand" href="https://reco-ai.vercel.app/agreements/{{ cpf_devedor }}">
+        Clique aqui para avaliar a decisão.
+      </a>
+
+      <hr/>
+
+      <p><small>Você está recebendo este e-mail por estar cadastrado à reco-ai.</small></p>
+    </columns>
+  </row>
+
+  <spacer size="16"></spacer>
+</container>

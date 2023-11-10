@@ -22,10 +22,11 @@ import {
   ProposalDenied,
   UserInputMessage,
   WaitForApproval,
-} from "../Message/messages";
+} from "../Message/messages-templates";
 import UserInput from "@/components/UserInput/user-input";
 
 import Styles from "./chat.module.scss";
+import { useChatContext } from "../../contexts/chat-context";
 
 async function updateProposal(chatID: string, data: Proposta) {
   return (await fetch(`${serverURL}/api/proposal/${chatID}/`, {
@@ -49,6 +50,7 @@ export default function Chat({ chatData }: ChatProps) {
   const [isDenied, setIsDenied] = useState<boolean>(
     chatData.status === "Acordo recusado"
   );
+  const { isAllowed } = useChatContext();
 
   const proposalsQuestions: IProposal[] = [
     firstProposal(chatData),
@@ -149,7 +151,7 @@ export default function Chat({ chatData }: ChatProps) {
       isBot: false,
     }]);
 
-    await updateProposal(chatData.cpf, {
+    await updateProposal(chatData.identifier, {
       aceito: true, autor: "Bot",
       status: "Aguardando aprovação",
       valorParcela, qtdParcelas, entrada,
@@ -187,7 +189,7 @@ export default function Chat({ chatData }: ChatProps) {
     const isWorstProposal = qtdParcelas === chatData.rules.piorParcela;
 
     // If accept, stop proposals
-    await updateProposal(chatData.cpf, {
+    await updateProposal(chatData.identifier, {
       aceito: isWorstProposal,
       autor: "Bot", valorParcela,
       status, entrada, qtdParcelas,
@@ -252,7 +254,7 @@ export default function Chat({ chatData }: ChatProps) {
                              / Math.max(installment, 1);
     const status = canBeAccepted ? "Aguardando aprovação" :
                    "Proposta do inadimplente";
-    await updateProposal(chatData.cpf, {
+    await updateProposal(chatData.identifier, {
       autor: "User",
       entrada: value,
       aceito: canBeAccepted,
@@ -280,7 +282,7 @@ export default function Chat({ chatData }: ChatProps) {
     }
   }
 
-  return (
+  return isAllowed && (
     <div className={Styles.chat}>
       <div className="overflow-y-scroll flex-1">
         {messages.map((messageData, index) => (
