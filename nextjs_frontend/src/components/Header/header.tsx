@@ -108,11 +108,13 @@ export default function Header() {
             </>
           ) : (
             <>
-              <button onClick={handleLogin} className="font-light">
-                Entrar
-              </button>
-              <button className="bg-primary rounded-full py-2 px-10 ml-6 text-white font-light">
+              <a className="font-light" href="mailto:reco.ia.contato@gmail.com">
                 Contato
+              </a>
+              <button onClick={handleLogin}
+                      className="bg-primary rounded-full py-2 px-10
+                                 ml-6 text-white font-light">
+                Entrar
               </button>
             </>
           )}
