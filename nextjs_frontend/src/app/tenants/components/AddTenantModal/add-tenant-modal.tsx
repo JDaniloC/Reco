@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Devedor } from "@/models/Devedores";
 import { serverURL } from "@/config";
+import { faker } from '@faker-js/faker/locale/pt_BR';
 
 import Button from "@/components/Button/button";
 import SnackBar from "@/components/SnackBar/snack-bar";
@@ -9,8 +10,24 @@ interface AddTenantModalProps {
   onClose: () => void;
 }
 
+export function generateCPF(): string {
+  const cpf = String(faker.number.int())
+    .padStart(11, "0").slice(0, 11);
+  return (
+    cpf.slice(0, 3) +
+    "." +
+    cpf.slice(3, 6) +
+    "." +
+    cpf.slice(6, 9) +
+    "-" +
+    cpf.slice(9, 11)
+  );
+}
+
 export default function AddTenantModal({ onClose }: AddTenantModalProps) {
-  const [form, setForm] = useState<Devedor>({} as Devedor);
+  const [form, setForm] = useState<Devedor>({
+    cpf: generateCPF(),
+  } as Devedor);
   const [averageDebit, setAverageDebit] = useState<number>(0);
   const [snackbarMessage, setSnackbarMessage] = useState<string>("");
 
@@ -76,18 +93,6 @@ export default function AddTenantModal({ onClose }: AddTenantModalProps) {
               </h3>
               <div className="mt-2">
                 <p className="text-sm mb-4 text-gray-500">Preencha as informações:</p>
-
-                <div className="mb-4">
-                  <label htmlFor="cpf" className="font-normal">
-                    CPF*
-                  </label>
-                  <input
-                    onChange={handleFormChange} required
-                    className="w-full px-3 py-2 border border-gray-300 shadow rounded-md h-10 focus:ring-primary-500 focus:border-primary-500"
-                    type="text" name="cpf" id="cpf"
-                    placeholder="Digite o CPF do inadimplente"
-                  />
-                </div>
 
                 <div className="mb-4">
                   <label htmlFor="nome" className="font-normal">

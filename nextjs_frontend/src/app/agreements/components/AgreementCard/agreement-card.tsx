@@ -12,10 +12,6 @@ export default function AgreementCard({ agreement }: AgreementCardProps) {
       <div className="p-5 flex flex-col rounded-xl text-sm font-light bg-white hover:bg-gray-50">
         <span className="text-xl font-normal mb-5">{agreement.nome}</span>
         <span>
-          <span className="font-normal">CPF:</span>&nbsp;
-          {agreement.cpf}
-        </span>
-        <span>
           <span className="font-normal">Condomínio:&nbsp;</span>
           {agreement.nomeCondominio}
         </span>

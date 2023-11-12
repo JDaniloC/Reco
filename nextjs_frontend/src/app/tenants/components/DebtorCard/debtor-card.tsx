@@ -21,10 +21,6 @@ export default function DebtorCard({ tenant, openModal }: DebtorCardProps) {
           {tenant.nome}
         </span>
       </div>
-      <div className="w-28 flex md:block items-center gap-2">
-        <p className="font-normal">CPF:</p>
-        <span className="text-xs font-light whitespace-nowrap">{tenant.cpf}</span>
-      </div>
       <div className="w-36 pb-1 flex md:block items-center gap-2">
         <p className="font-normal">Condomínio:</p>
         <div className="flex items-center gap-1 pt-1 text-xs font-light whitespace-nowrap">

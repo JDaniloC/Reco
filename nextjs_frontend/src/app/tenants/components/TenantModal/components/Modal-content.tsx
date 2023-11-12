@@ -104,7 +104,7 @@ export default function ModalContent({
             <div className="flex flex-col items-start gap-2 w-100 md:w-1/2">
               <span className="font-normal text-lg">{debtor.nome}</span>
               <span className="text-sm font-light">
-                {debtor.cpf} | {debtor.nomeCondominio}
+                {debtor.nomeCondominio}
               </span>
             </div>
             <div className="flex flex-col items-start gap-2 mr-20">

@@ -31,10 +31,6 @@ export default function TenantProfileCard({ tenant }: TenantProfileCardProps) {
           <span className="text-lg font-normal">{tenant.nome}</span>
           <div className="w-full flex justify-between flex-wrap lg:flex-nowrap">
             <div className="flex flex-col">
-              <span className="text-xs font-light">
-                <span className="font-normal">CPF:</span>&nbsp;
-                {tenant.cpf}
-              </span>
               <span className="text-sm font-light">
                 <span className="font-normal">Condomínio:</span>&nbsp;
                 {tenant.nomeCondominio}
