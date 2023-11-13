@@ -6,7 +6,6 @@ import Button from "@/components/Button/button";
 import { useDropzone } from "react-dropzone";
 import Papa from "papaparse";
 import { serverURL } from "@/config";
-import { useRouter } from "next/navigation";
 import SnackBar from "@/components/SnackBar/snack-bar";
 
 interface ImportTenantModalProps {
@@ -16,10 +15,10 @@ interface ImportTenantModalProps {
 export default function ImportTenantModal({
   onClose
 }: ImportTenantModalProps) {
-  const router = useRouter();
   const [droppedFiles, setDroppedFiles] = useState<any[]>([]);
-  const [snackbarMessage, setSnackbarMessage] = useState<string>("");
   const [snackbarType, setSnackbarType] = useState<string>("error");
+  const [snackbarMessage, setSnackbarMessage] = useState<string>("");
+  const [condominiumName, setCondominiumName] = useState<string>("");
 
   function callSnackbar(message: string, type: string = "error") {
     setSnackbarMessage(message);
@@ -29,17 +28,14 @@ export default function ImportTenantModal({
   function validateCSVHeaders(file: any) {
     return new Promise((resolve, reject) => {
       Papa.parse(file, {
-        header: true,
+        preview: 3,
+        header: false,
         skipEmptyLines: true,
+        encoding: "Windows-1252",
+        transform: (value: string) => value.trim(),
         complete: (result: any) => {
-          const headers = result.meta.fields;
-          const requiredHeaders = [
-            "cpf",
-            "nome",
-            "valorDivida",
-            "mensalidadesAtrasadas"
-          ];
-
+          const headers = result.data[1];
+          const requiredHeaders = ["Descrição", "Total"];
           const isValid = requiredHeaders.every((header) =>
             headers.includes(header)
           );
@@ -48,7 +44,7 @@ export default function ImportTenantModal({
             resolve(true);
           } else {
             reject(
-              "Invalid headers in the CSV file. Please make sure the headers are 'cpf', 'nome', 'valorDivida', and 'mensalidadesAtrasadas'."
+              "Cabeçalhos faltando: 'Descrição' e 'Total'"
             );
           }
         },
@@ -86,14 +82,23 @@ export default function ImportTenantModal({
         setDroppedFiles(acceptedFiles);
       } else {
         callSnackbar(
-          "Arquivo inválido. Por favor, verifique se todos os arquivos possuem as colunas 'cpf', 'nome', 'valorDivida' e 'mensalidadesAtrasadas'."
+          "Arquivo inválido. Por favor, verifique se todos os arquivos possuem linhas com o nome do devedor e colunas 'Descrição' e 'Total'."
         );
       }
     },
+    accept: {
+      "text/csv": [".csv"],
+      "application/vnd.ms-excel": [".csv"],
+    }
   });
+
+  function handleCondominiumChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setCondominiumName(e.target.value);
+  }
 
   async function handleSubmit() {
     const formData = new FormData();
+    formData.append("condominium", condominiumName);
     droppedFiles.forEach((file) => formData.append("files", file));
 
     const response = await fetch(`${serverURL}/api/tenants/import`, {
@@ -104,7 +109,6 @@ export default function ImportTenantModal({
     if (response.ok) {
       callSnackbar("Devedores adicionados com sucesso!", "success");
       setDroppedFiles([]);
-      router.push("/tenants");
     } else {
       callSnackbar("Erro ao enviar os arquivos.");
     }
@@ -122,14 +126,26 @@ export default function ImportTenantModal({
           />
           <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
             <div className="bg-white mb-10 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-              <div className="mb-10">
+              <div className="mb-5">
                 <h1 className="text-4xl font-bold leading-10">
                   Importar devedores
                 </h1>
                 <p className="text-base font-light">
-                  Adicione a partir de arquivos CSVs. Os arquivos devem conter
-                  as colunas &quot;cpf&quot;, &quot;nome&quot;, &quot;valorDivida&quot; e &quot;mensalidadesAtrasadas&quot;.
+                  Adicione o arquivo CSV do relatório &quot;Inadimplência com composição (detalhado)&quot; de forma que devem conter as colunas &quot;Descrição&quot; e &quot;Total&quot;.
                 </p>
+              </div>
+
+              <div className="mb-4">
+                <label htmlFor="nomeCondominio" className="font-normal">
+                  Nome do Condomínio
+                </label>
+                <input
+                  onChange={handleCondominiumChange} type="text"
+                  className="w-full px-3 py-2 border border-gray-300 shadow rounded-md h-10 focus:ring-primary-500 focus:border-primary-500"
+                  name="nomeCondominio" id="nomeCondominio"
+                  placeholder="Digite o nome do condomínio"
+                  value={condominiumName}
+                />
               </div>
 
               <div
@@ -145,7 +161,7 @@ export default function ImportTenantModal({
                   height: "200px",
                 }}
               >
-                <input {...getInputProps()} />
+                <input {...getInputProps()}/>
                 <p className="text-gray-600">
                   Solte seus arquivos aqui ou clique para selecionar.
                 </p>
@@ -161,7 +177,7 @@ export default function ImportTenantModal({
                       ))}
                     </ul>
                   </div>
-                  <div className="mt-4 self-start">
+                  <div className="mt-4">
                     <Button onClick={handleSubmit}>Enviar</Button>
                   </div>
                 </div>

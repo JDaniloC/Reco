@@ -21,6 +21,16 @@ async function fetchTenants() {
     })) as Devedor[];
 }
 
+async function removeTenant(cpf: string) {
+  return (await fetch(`${serverURL}/api/tenants/?cpf=${cpf}`, {
+    method: "DELETE",
+  }).then((response) => response.json())
+    .catch((error) => {
+      console.error(error);
+      return { error: "Error on fetch" };
+    })) as Devedor || { error: String };
+}
+
 async function createAgreement(
   cpf: string,
   valorTotal: number,
@@ -95,6 +105,13 @@ export default function AgreementsPage() {
     });
   }
 
+  async function onRemoveTenant(cpf: string) {
+    const wasRemoved = await removeTenant(cpf);
+    if (wasRemoved && !('error' in wasRemoved)) {
+      setTenants((tenants) => tenants.filter((tenant) => tenant.cpf !== cpf));
+    }
+  }
+
   return (
     <div className="containerLayout">
       <div className="my-10">
@@ -127,6 +144,7 @@ export default function AgreementsPage() {
       <TenantList
         tenants={tenants}
         loading={loading}
+        onRemoveTenant={onRemoveTenant}
         onCreateAgreement={onCreateAgreement}
       />
       <span className="hidden">

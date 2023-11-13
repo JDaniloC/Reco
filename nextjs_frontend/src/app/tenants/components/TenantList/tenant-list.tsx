@@ -19,11 +19,14 @@ interface TenantListProps {
     debtor: Devedor,
     negotiation: INegotiationData
   ) => Promise<string | null>;
+  onRemoveTenant: (cpf: string) => void;
 }
 
 const tenantsPerPage = 7;
 
-export default function TenantList({ tenants, loading, onCreateAgreement }: TenantListProps) {
+export default function TenantList({
+  tenants, loading, onCreateAgreement, onRemoveTenant
+}: TenantListProps) {
   const [filteredTenants, setFilteredTenants] = useState<Devedor[]>(tenants);
   const [condomiunsList, setCondomiunsList] = useState<string[]>([]);
   const [monthsLateList, setMonthsLateList] = useState<string[]>([]);
@@ -126,7 +129,8 @@ export default function TenantList({ tenants, loading, onCreateAgreement }: Tena
         "Sem nenhum devedor registrado. Clique em Adicionar ou Importar para adicionar"
       ) : (
         handlePagination().map((tenant) => (
-          <DebtorCard key={tenant.cpf} tenant={tenant} openModal={openModal} />
+          <DebtorCard key={tenant.cpf} openModal={openModal}
+                      tenant={tenant} onRemove={onRemoveTenant}/>
         ))
       )}
       <Paginator

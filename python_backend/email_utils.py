@@ -42,13 +42,15 @@ def send_email(sender_email: str, sender_password: str,
     return status
 
 def send_email_notification(sender_email: str, sender_password: str,
-                            receiver_email: str, cpf_devedor: str):
+                            receiver_email: str, cpf_devedor: str,
+                            debtor_name: str) -> bool:
     env = Environment(
         loader=FileSystemLoader("templates"),
         autoescape=select_autoescape()
     )
     template = env.get_template("email.html")
-    content = template.render(cpf_devedor=cpf_devedor)
+    content = template.render(cpf_devedor=cpf_devedor,
+                              nome_devedor=debtor_name)
 
     content_text = prepare_content(sender_email, receiver_email,
                                    content, LOGO_IMAGE_PATH)

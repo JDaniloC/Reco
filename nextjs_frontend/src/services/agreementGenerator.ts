@@ -65,7 +65,7 @@ async function generateAgreement(devedor: DevedorAcordo) {
 Unidade:-
 Cod. acordo:-
 Efetuado em:${acordoDateString}
-Condômino(Proprietário):${devedor.nome}  CPF/CNPJ: ${devedor.cpf}
+Condômino(Proprietário):${devedor.nome}  
                     -
     
 Condomínio:${devedor.nomeCondominio}

@@ -24,7 +24,8 @@ app = socketio.ASGIApp(sio)
 connections: dict[str, str] = dict()
 messages_queue: dict[str, Notification] = dict()
 
-def notificate_email(receiver_email: str, cpf_devedor: str):
+def notificate_email(receiver_email: str, cpf_devedor: str,
+                     debtor_name: str) -> bool:
     address_key = "EMAIL_ADDRESS"
     pass_key = "EMAIL_PASSWORD"
     email_address = os.getenv(address_key) or os.environ.get(address_key)
@@ -32,7 +33,7 @@ def notificate_email(receiver_email: str, cpf_devedor: str):
 
     if email_address and email_password:
         return send_email_notification(email_address, email_password,
-                                       receiver_email, cpf_devedor)
+                            receiver_email, cpf_devedor, debtor_name)
     return False
 
 @sio.event
@@ -65,7 +66,8 @@ async def notification_handler(sid: str, data: Notification):
         messages_queue[receiver_email] = [data]
 
     if validated_data.type == "Sucesso":
-        notificate_email(receiver_email, validated_data.tenantCpf)
+        notificate_email(receiver_email, validated_data.tenantCpf,
+                         validated_data.tenantName)
 
 @sio.event
 async def disconnect(sid: str):

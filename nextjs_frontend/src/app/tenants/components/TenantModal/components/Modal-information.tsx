@@ -19,7 +19,7 @@ export default function ModalInformation({
 }: ModalInformationProps) {
 
   return (
-    <div className="flex flex-col gap-1 p-4 w-full
+    <div className="flex flex-col gap-1 p-4 w-full text-left
                   bg-tertiary rounded-md shadow relative">
       <span className="font-normal text-sm">{title}:</span>
       <span className="text-sm font-light md:whitespace-nowrap">

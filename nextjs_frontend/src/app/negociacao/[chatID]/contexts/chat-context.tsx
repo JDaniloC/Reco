@@ -14,7 +14,7 @@ interface ChatProviderProps {
 export const ChatContext = createContext<ChatContext | null>(null);
 
 export function ChatProvider({ children }: ChatProviderProps) {
-  const [isAllowed, setIsAllowed] = useState<boolean>(false);
+  const [isAllowed, setIsAllowed] = useState<boolean>(true);
 
   return (
     <ChatContext.Provider value={{
