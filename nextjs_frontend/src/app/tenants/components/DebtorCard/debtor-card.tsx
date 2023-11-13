@@ -3,18 +3,24 @@ import { Devedor } from "@/models/Devedores";
 interface DebtorCardProps {
   tenant: Devedor;
   openModal: (debtor: Devedor) => void;
+  onRemove: (id: string) => void;
 }
 
-export default function DebtorCard({ tenant, openModal }: DebtorCardProps) {
+export default function DebtorCard({
+  tenant, openModal, onRemove
+}: DebtorCardProps) {
+  async function handleRemoveTenant() {
+    onRemove(tenant.cpf);
+  }
   function handleStartAgreement() {
     openModal(tenant);
   }
 
   return (
-    <div
-      className="w-full py-4 px-8 flex flex-col md:flex-row flex-wrap items-start md:items-center justify-between
-                 rounded-xl shadow bg-white">
-      <div className="flex flex-col items-start gap-1  w-full md:w-2/12">
+    <div className="w-full py-4 px-8 flex flex-col md:flex-row flex-wrap
+                    items-start md:items-center justify-between rounded-xl
+                    shadow bg-white">
+      <div className="flex flex-col items-start gap-1 w-full md:w-2/12">
         <span
           className="font-normal text-xl w-full whitespace-nowrap
                          overflow-hidden text-ellipsis ">
@@ -49,6 +55,11 @@ export default function DebtorCard({ tenant, openModal }: DebtorCardProps) {
           Negociar
         </button>
       </div>
+      <button
+        onClick={handleRemoveTenant}
+        className="text-5xl text-gray-500 hover:text-gray-700 ml-[-3rem]">
+        &times;
+      </button>
     </div>
   );
 }

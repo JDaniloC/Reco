@@ -45,3 +45,18 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json(newDevedor);
 }
+
+// This function was implement here because the cpf wasn't a number
+export async function DELETE(request: NextRequest) {
+  connectToDatabase();
+
+  const { searchParams } = new URL(request.url);
+  const cpf = searchParams.get("cpf");
+  const devedor = await Devedores.findOneAndRemove({ cpf });
+  if (!devedor) {
+    return NextResponse.json({
+      "error": "No debtor found"
+    });
+  }
+  return NextResponse.json(devedor);
+}
