@@ -11,6 +11,8 @@ export const serverURL = protocol + urlName;
 
 export const apiURL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
+console.log(serverURL, branchPath, vercelPath, apiURL)
+
 if (!apiURL) {
   console.error(
     'Please define the NEXT_PUBLIC_BACKEND_URL environment variable inside .env.local'
