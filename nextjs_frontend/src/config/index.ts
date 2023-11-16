@@ -2,7 +2,8 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 const branchPath = process.env.NEXT_PUBLIC_VERCEL_BRANCH_URL;
 const vercelPath = process.env.NEXT_PUBLIC_VERCEL_URL;
-const prodPath = branchPath ? branchPath : vercelPath;
+const vercelEnv = process.env.NEXT_PUBLIC_VERCEL_ENV;
+const prodPath = vercelEnv !== "production" ? branchPath : vercelPath;
 
 const protocol = isProduction ? 'https://' : 'http://';
 const urlName = isProduction ? prodPath : 'localhost:3000';
