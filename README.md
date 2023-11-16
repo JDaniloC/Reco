@@ -29,9 +29,9 @@ Faça o clone do projeto ou faça o download do repositório, e siga os passos a
 #### Frontend
 - **MONGODB_URI**: URI de conexão com o MongoDB
 - **NEXTAUTH_SECRET**: Secret do NextAuth, hash de 32 dígitos, para uso da biblioteca "next-auth"
-- **NEXTAUTH_URL**: URL do NextAuth (usualmente, https://localhost:3000/api/auth)
-- **NEXT_PUBLIC_BACKEND_URL**: URL do servidor (usualmente, https://localhost:8080)
-- **NEXT_PUBLIC_SERVER_URL**: URL do servidor websocket (usualmente, http://localhost:3000)
+- **NEXTAUTH_URL**: Apenas em dev, URL da página web (usualmente, http://localhost:3000)
+- **NEXT_PUBLIC_BACKEND_URL**: URL do servidor (usualmente, http://localhost:8080)
+- **NEXT_PUBLIC_VERCEL_URL**: URL da página web, a Next já adiciona essa variável em prod
 
 #### Backend
 - **EMAIL_ADDRESS**: O endereço de email que será usado para enviar emails
