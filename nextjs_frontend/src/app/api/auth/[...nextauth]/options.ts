@@ -15,6 +15,13 @@ export const options: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials: any) {
+        if (process.env.VERCEL_ENV === "preview") {
+          return {
+            name: "Tester",
+            email: "teste@email.com",
+          }
+        }
+
         const response = await fetch(`${serverURL}/api/auth`, {
           method: "POST",
           headers: {
