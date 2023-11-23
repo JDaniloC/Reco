@@ -284,6 +284,9 @@ export default function Chat({ chatData }: ChatProps) {
 
   return isAllowed && (
     <div className={Styles.chat}>
+      <h1 className="text-2xl font-medium p-4 border-b-gray-200 border-b-2">
+        {chatData.nomeCondominio}
+      </h1>
       <div className="overflow-y-scroll flex-1">
         {messages.map((messageData, index) => (
           <Message

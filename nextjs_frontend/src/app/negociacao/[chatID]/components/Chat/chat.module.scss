@@ -1,6 +1,5 @@
 .chat {
-  @apply w-full h-4/5 bg-white shadow-md rounded-3xl
-    flex flex-col relative;
+  @apply w-full h-full bg-white shadow-md flex flex-col relative;
 
   b {
     @apply font-semibold;
