@@ -1,6 +1,6 @@
 import CredentialsProvider from "next-auth/providers/credentials";
 import type { NextAuthOptions } from "next-auth";
-import { serverURL } from "@/config";
+import { serverURL, vercelEnv } from "@/config";
 
 export const options: NextAuthOptions = {
   providers: [
@@ -15,6 +15,13 @@ export const options: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials: any) {
+        if (vercelEnv && vercelEnv !== "production") {
+          return {
+            name: "Tester",
+            email: "teste@email.com",
+          }
+        }
+
         const response = await fetch(`${serverURL}/api/auth`, {
           method: "POST",
           headers: {
@@ -34,6 +41,8 @@ export const options: NextAuthOptions = {
   ],
   callbacks: {
     async session({ session, token, user }) {
+      if (vercelEnv && vercelEnv !== "production") return session;
+
       const response = await fetch(
         `${serverURL}/api/auth?email=${token.email}`, {
         method: "GET", headers: {

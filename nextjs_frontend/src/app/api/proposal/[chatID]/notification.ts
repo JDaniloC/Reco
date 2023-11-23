@@ -1,4 +1,5 @@
 import io from "socket.io-client";
+import { randomUUID } from "crypto";
 
 import { apiURL } from "@/config";
 import { Devedor } from "@/models/Devedores";
@@ -33,10 +34,11 @@ export function notificate(debtor: Devedor, agreement: Acordo) {
     {
       condominiumName: debtor.nomeCondominio,
       email: debtor.emailAdministrador,
+      identifier: randomUUID(),
       message: message.message,
       tenantName: debtor.nome,
       tenantCpf: debtor.cpf,
-      type: message.type
+      type: message.type,
     } as INotification,
     () => {
       socket.close();

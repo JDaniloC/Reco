@@ -10,7 +10,7 @@ import { useSideBarContext } from "@/contexts/SideBarContext";
 import NotificationFlyMenu from "./components/NotificationFlyMenu/notification-fly-menu";
 
 export default function Header() {
-  const { notifications, setNotifications } = useNotificationContext();
+  const { notifications, removeNotification } = useNotificationContext();
   const { hideSideBar, setHideSideBar } = useSideBarContext();
   const { data: session } = useSession();
 
@@ -31,11 +31,6 @@ export default function Header() {
 
   function handleSidebarToggle() {
     setHideSideBar(!hideSideBar);
-  }
-
-  function handleRemoveNotification(index: number) {
-    const newNotifications = notifications.filter((_, i) => i !== index);
-    setNotifications(newNotifications);
   }
 
   return (
@@ -91,7 +86,7 @@ export default function Header() {
             <>
               <NotificationFlyMenu
                 notifications={notifications}
-                onRemoveCard={handleRemoveNotification}
+                onRemoveCard={removeNotification}
               />
               <button
                 onClick={handleLogout}

@@ -15,6 +15,7 @@ class Notification(BaseModel):
     message: str
     tenantCpf: str
     tenantName: str
+    identifier: str
     condominiumName: str
 
 sio = socketio.AsyncServer(async_mode='asgi',
@@ -68,6 +69,14 @@ async def notification_handler(sid: str, data: Notification):
     if validated_data.type == "Sucesso":
         notificate_email(receiver_email, validated_data.tenantCpf,
                          validated_data.tenantName)
+
+@sio.on('remove-notification')
+async def remove_notification_handler(sid: str, identifier: str):
+    session: Session = await sio.get_session(sid)
+    if session:
+        email = session.email
+        messages_queue[email] = [n for n in messages_queue[email]
+                                 if n.identifier != identifier]
 
 @sio.event
 async def disconnect(sid: str):
