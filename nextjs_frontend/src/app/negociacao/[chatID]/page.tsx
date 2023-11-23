@@ -30,8 +30,8 @@ export default async function ChatPage({ params }: ChatPageProps) {
   const proposals = chatData.proposals;
 
   return (
-    <div className="flex w-full h-full bg-gray-100 justify-center
-                    flex-col-reverse sm:flex-row">
+    <div className="flex w-full h-full max-h-[calc(100vh-4rem)] bg-gray-100
+                    justify-center flex-col-reverse sm:flex-row">
       <ChatProvider>
         <ChatModal cpf={chatData.cpf} />
         <Chat chatData={chatData} />
@@ -56,7 +56,9 @@ export default async function ChatPage({ params }: ChatPageProps) {
           <>
           <p className="text-gray-400 mt-4"> Proposta de entrada </p>
           <p className="font-normal text-xl">
-            R$ {proposals[proposals.length - 1].entrada}
+            R$ {proposals[proposals.length - 1].entrada < 0 ?
+                proposals[proposals.length - 1].entrada :
+                proposals[proposals.length - 1].entrada * chatData.valorDivida}
           </p>
           <p className="text-gray-400 mt-4"> Proposta de parcelamento </p>
           <p className="font-normal text-xl">

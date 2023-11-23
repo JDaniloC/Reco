@@ -20,3 +20,9 @@ export interface IProposal extends Proposta {
   denyText: string;
   confirmText: string;
 }
+
+export interface IChatMessage {
+    is_finished: boolean
+    question: string
+    message: string
+}

@@ -1,284 +1,91 @@
 "use client";
 
-import { serverURL } from "@/config";
-import { useEffect, useState } from "react";
-
-import { Acordo, Proposta } from "@/models/Acordos";
+import { apiURL } from "@/config";
+import { useEffect, useState, useRef } from "react";
 
 import { ChatProps } from "../../types/views.dto";
-import { IMessage, IProposal } from "../../types/messages.dto";
-import { IUserInput } from "@/components/UserInput/user-input.dto";
-
-import {
-  firstProposal,
-  secondProposal,
-  thirdProposal,
-  restartProposal,
-} from "./utils";
+import { IMessage, IChatMessage } from "../../types/messages.dto";
 
 import Message from "../Message/message";
-import {
-  AcceptProposal,
-  ProposalDenied,
-  UserInputMessage,
-  WaitForApproval,
-} from "../Message/messages-templates";
-import UserInput from "@/components/UserInput/user-input";
 
 import Styles from "./chat.module.scss";
 import { useChatContext } from "../../contexts/chat-context";
 
-async function updateProposal(chatID: string, data: Proposta) {
-  return (await fetch(`${serverURL}/api/proposal/${chatID}/`, {
+async function fetchStartChat(name: string, cpf: number, debit: number) {
+  return (await fetch(`${apiURL}/api/v1/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
+    body: JSON.stringify({
+      name: name,
+      user_id: cpf,
+      total_debit: debit,
+    }),
   })
     .then((response) => response.json())
     .catch((error) => {
       console.error(error);
-      return null;
-    })) as Acordo | null;
+      return { message: "Erro ao iniciar chat" };
+    })) as { messages: { role: string, text: string }[] };
+}
+
+async function fetchSendMessage(cpf: number, message: string) {
+  return (await fetch(`${apiURL}/api/v1/?user_id=${cpf}&message=${message}`)
+    .then((response) => response.json())
+    .catch((error) => {
+      console.error(error);
+      return { messages: [ {
+        text: "Ocorreu um problema...", role: "assistant"
+      }] };
+    })) as IChatMessage;
 }
 
 export default function Chat({ chatData }: ChatProps) {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [messages, setMessages] = useState<IMessage[]>([]);
-  const [isWaiting, setIsWaiting] = useState<boolean>(
-    chatData.status === "Aguardando aprovação"
-  );
-  const [isDenied, setIsDenied] = useState<boolean>(
-    chatData.status === "Acordo recusado"
-  );
+  const [message, setMessage] = useState<string>("");
+  const chatContainer = useRef<HTMLDivElement>(null);
   const { isAllowed } = useChatContext();
 
-  const proposalsQuestions: IProposal[] = [
-    firstProposal(chatData),
-    secondProposal(chatData),
-    thirdProposal(chatData),
-    restartProposal(),
-  ];
-  const proposalsResponses: [() => void, () => void][] = [
-    [onConfirmFirstProposal, onDenyFirstProposal],
-    [onConfirmSecondProposal, onDenySecondProposal],
-    [onRetryUserProposal, onRestartNegotiation],
-    [onRetryUserProposal, onRestartNegotiation],
-  ]
-  const [showUserInput, setShowUserInput] = useState<boolean>(false);
-
-  const lastProposalIdx = chatData.proposals.length - 1;
-  const lastProposal = chatData.proposals[lastProposalIdx] || {
-    aceito: false,
-    entrada: 0,
-    qtdParcelas: 0,
-    valorParcela: 0,
-  };
-
   useEffect(() => {
-    function getIndexByStatus(proposal: Proposta | undefined) {
-      switch (proposal && proposal.status) {
-        case "Primeira proposta":
-          return 0;
-        case "Segunda proposta":
-          return 1;
-        case "Proposta do inadimplente":
-          return 2;
-        default:
-          return -1;
-      }
+    async function getFirstMessage() {
+      const { nome, cpf, valorDivida } = chatData;
+      const cpfDevedor = Number(cpf.replaceAll(".", "").replaceAll("-", ""));
+      const { messages } = await fetchStartChat(nome, cpfDevedor, valorDivida);
+      setMessages(messages.map(message => ({
+        message: message.text, isBot: message.role === "assistant"
+      })));
+      setIsLoading(false);
     }
-
-    const newMessages: IMessage[] = [];
-    const proposalFinished = isWaiting ||
-      chatData.status === "Acordo aceito" ||
-      chatData.status === "Acordo recusado" ||
-      chatData.status === "Aguardando aprovação";
-    
-    let index = 0;
-    do {
-      if (index - 1 === lastProposalIdx && proposalFinished) {
-        break;
-      }
-      const proposal = chatData.proposals[index];
-      let i = getIndexByStatus(proposal);
-      if (i === -1) {
-        i = getIndexByStatus(chatData.proposals[index - 1]) + 1;
-      }
-      const isUserProposal = i === 2 ||
-            proposal?.autor === "User";
-      const { message, confirmText, denyText } = proposalsQuestions[i];
-
-      newMessages.push({
-        isBot: true,
-        message, denyText, confirmText,
-        onDeny: proposalsResponses[i][1],
-        onConfirm: proposalsResponses[i][0],
-        iteractive: lastProposalIdx === index - 1 &&
-                !proposalFinished && !isUserProposal,
-      });
-
-      if (index > lastProposalIdx && !isUserProposal) break;
-
-      if (index - 1 === lastProposalIdx) {
-        setShowUserInput(true);
-      } else {
-        const answer = proposal.aceito ? confirmText : denyText;
-        const message: IMessage = {
-          message: answer, isBot: false
-        };
-        if (isUserProposal) {
-          message.isUserInput = true;
-          message.value = proposal.entrada;
-          message.installment = proposal.qtdParcelas;
-          message.reason = proposal.motivo as string;
-        }
-        newMessages.push(message);
-      }
-    } while ((chatData.proposals.length + 1) > ++index);
-
-    setMessages(newMessages);
+    getFirstMessage();
   }, [chatData]);
 
-  async function onConfirmPredefinedProposal(index: number) {
+  useEffect(() => {
+    if (chatContainer) chatContainer.current?.scrollTo(
+      0, chatContainer.current?.scrollHeight)
+  })
+
+  async function handleSendMessage() {
+    setMessages((prev) => [...prev, { message, isBot: false }]);
     setIsLoading(true);
-    const {
-      entrada, qtdParcelas, status,
-      valorParcela, confirmText,
-    } = proposalsQuestions[index];
-    setMessages((prevMessages) => [
-      ...prevMessages, {
-      message: confirmText,
-      isBot: false,
-    }]);
 
-    await updateProposal(chatData.identifier, {
-      aceito: true, autor: "Bot",
-      status: "Aguardando aprovação",
-      valorParcela, qtdParcelas, entrada,
-    });
-    setIsLoading(false);
-    setIsWaiting(true);
-  }
+    const userMessage = message;
+    setMessage("");
 
-  function onConfirmFirstProposal() {
-    onConfirmPredefinedProposal(0);
-  }
-  function onConfirmSecondProposal() {
-    onConfirmPredefinedProposal(1);
-  }
-
-  function onRetryUserProposal() {
-    setIsLoading(true);
-    const { confirmText } = proposalsQuestions[3];
-    setMessages((prevMessages) => [...prevMessages,
-    { message: confirmText, isBot: false }, {
-      message: proposalsQuestions[2].message,
-      isBot: true, iteractive: false,
-    }]);
-    setShowUserInput(true);
+    const cpfDevedor = Number(chatData.cpf.replaceAll(".", "")
+                                          .replaceAll("-", ""));
+    const response = await fetchSendMessage(cpfDevedor, userMessage);
+    const { message: newMessage } = response;
+    setMessages((prev) => [...prev, { message: newMessage, isBot: true }]);
     setIsLoading(false);
   }
 
-  async function onDenyPredefinedProposal(index: number) {
-    setIsLoading(true);
-    const { entrada, qtdParcelas, valorParcela, status,
-            denyText: userDenyText } = proposalsQuestions[index];
-    const userAnswer = { message: userDenyText, isBot: false };
-    setMessages((prevMessages) => [...prevMessages, userAnswer]);
-
-    const isWorstProposal = qtdParcelas === chatData.rules.piorParcela;
-
-    // If accept, stop proposals
-    await updateProposal(chatData.identifier, {
-      aceito: isWorstProposal,
-      autor: "Bot", valorParcela,
-      status, entrada, qtdParcelas,
-    });
-    setIsLoading(false);
-
-    if (isWorstProposal) {
-      return setIsDenied(true);
-    }
-
-    const {
-      autor, message, confirmText, denyText
-    } = proposalsQuestions[index + 1];
-    setMessages((prevMessages) => [...prevMessages, {
-      message, isBot: true,
-      confirmText, denyText, 
-      iteractive: autor === "Bot",
-      onConfirm: () => onConfirmPredefinedProposal(index + 1),
-      onDeny: () => onDenyPredefinedProposal(index + 1),
-    }]);
-    if (autor === "User") {
-      setShowUserInput(true);
-    }
+  function onMessageChange(event: any) {
+    setMessage(event.target.value);
   }
 
-  function onDenyFirstProposal() {
-    onDenyPredefinedProposal(0);
-  }
-
-  function onDenySecondProposal() {
-    onDenyPredefinedProposal(1);
-  }
-
-  async function onRestartNegotiation() {
-    const { confirmText: userConfirmText } = proposalsQuestions[2];
-    const { message, confirmText, denyText } = proposalsQuestions[0];
-    setMessages((prevMessages) => [...prevMessages, {
-      message: userConfirmText,
-      isBot: false,
-    },
-    {
-      isBot: true,
-      message: message,
-      iteractive: true,
-      confirmText, denyText,
-      onDeny: onDenyFirstProposal,
-      onConfirm: onConfirmFirstProposal,
-    }]);
-  }
-
-  async function confirmUserInput({ installment, reason, value }: IUserInput) {
-    setIsLoading(true);
-    setShowUserInput(false);
-    setMessages((prevMessages) => [
-      ...prevMessages, {
-      isUserInput: true,
-      isBot: false, message: "",
-      installment, reason, value
-    }]);
-    const canBeAccepted = installment <= chatData.rules.piorParcela;
-    const installmentValue = (chatData.valorDivida - value)
-                             / Math.max(installment, 1);
-    const status = canBeAccepted ? "Aguardando aprovação" :
-                   "Proposta do inadimplente";
-    await updateProposal(chatData.identifier, {
-      autor: "User",
-      entrada: value,
-      aceito: canBeAccepted,
-      motivo: reason, status,
-      qtdParcelas: installment,
-      valorParcela: installmentValue,
-    });
-    setIsLoading(false);
-
-    if (canBeAccepted) {
-      setIsWaiting(true);
-    } else {
-      const index = proposalsQuestions.length - 1;
-      const newMessage = proposalsQuestions[index];
-      setMessages((prevMessages) => [
-        ...prevMessages, {
-        isBot: true,
-        iteractive: true,
-        message: newMessage.message,
-        denyText: newMessage.denyText,
-        confirmText: newMessage.confirmText,
-        onConfirm: onRetryUserProposal,
-        onDeny: onRestartNegotiation,
-      }]);
+  function handleKeyPress(event: any) {
+    if(event.key === 'Enter'){
+      handleSendMessage();
     }
   }
 
@@ -287,63 +94,32 @@ export default function Chat({ chatData }: ChatProps) {
       <h1 className="text-2xl font-medium p-4 border-b-gray-200 border-b-2">
         {chatData.nomeCondominio}
       </h1>
-      <div className="overflow-y-scroll flex-1">
+      <div className="overflow-y-scroll flex-1" ref={chatContainer}>
         {messages.map((messageData, index) => (
-          <Message
-            key={index} iteractive={
-              index === messages.length - 1 &&
-              !isWaiting && !isLoading &&
-              messageData.iteractive
-            }
-            acceptText={messageData.confirmText}
-            onConfirm={messageData.onConfirm}
-            denyText={messageData.denyText}
-            onDeny={messageData.onDeny}
-            isBot={messageData.isBot}
-          >
-            {messageData.isUserInput ? (
-              <UserInputMessage
-                value={messageData.value!}
-                reason={messageData.reason!}
-                installment={messageData.installment!}
-              />
-            ):
-            <span dangerouslySetInnerHTML={{ __html: messageData.message }}/>}
+          <Message key={index} isBot={messageData.isBot}>
+            <span dangerouslySetInnerHTML={{ __html: messageData.message }}/>
           </Message>
         ))}
-        {isWaiting && (
-          <Message isBot={true} iteractive={false}>
-            <WaitForApproval name={chatData.nome} />
-          </Message>
-        )}
-        {chatData.status === "Acordo aceito" && (
-          <Message isBot={true} iteractive={false}>
-            <AcceptProposal
-              value={lastProposal.entrada}
-              debit={chatData.valorDivida}
-              author={lastProposal.autor}
-              installment={lastProposal.qtdParcelas}
-            />
-          </Message>
-        )}
-        {isDenied && (
-          <Message isBot={true} iteractive={false}>
-            <ProposalDenied name={chatData.nome} contact={chatData.contact} />
-          </Message>
-        )}
         {isLoading && (
           <Message isBot={true} iteractive={false}>
-            Digitando...
+            <div className={Styles.loading}><span></span></div>
           </Message>
         )}
       </div>
-      {showUserInput && (
-        <UserInput
-          divida={chatData.valorDivida}
-          onConfirm={confirmUserInput}
-          showReason={true}
+      <div className="flex pr-4">
+        <input
+          value={message}
+          onChange={onMessageChange}
+          onKeyPress={handleKeyPress}
+          className="p-4 shadow-md w-full"
+          placeholder="Escreva sua mensagem"
+          type="text" name="message" id="message"
         />
-      )}
+        <button onClick={handleSendMessage}>
+          <img src="/icons/send.svg" alt="send image"
+            className="w-8 h-8"/>
+        </button>
+      </div>
     </div>
   );
 }

@@ -14,20 +14,20 @@ export default function Message({
   denyText = "Recusar acordo",
   onConfirm, onDeny,
 }: MessageProps) {
-  const styles = isBot ? "" : "min-[640px]:ml-auto bg-tertiary";
+  const styles = isBot ? "" : "min-[640px]:ml-auto text-white bg-[#0171cc]";
 
   return (
     <div className={`xl:w-2/5 shadow-md m-7 max-h-fit rounded-xl p-5
-                    ${styles} sm:w-4/5`}
+                    ${styles} sm:w-4/5 font-normal`}
     >
-      <div className="text-base font-normal">{children}</div>
+      <div className="text-base">{children}</div>
       {iteractive ? (
         <div className="flex flex-col mt-8">
           Clique na opção que se adequa a sua situação:
-          <div className="grid grid-cols-2 w-full mt-2 lg:w-2/3 gap-2">
+          <div className="grid grid-cols-2 w-full mt-2 lg:w-4/5 gap-2">
             <button
               onClick={onConfirm}
-              className="bg-primary h-fit p-1 rounded-md min-h-[48px]"
+              className="bg-[#0171cc] h-fit p-1 rounded-md min-h-[48px]"
             >
               <p className="text-white"> {acceptText} </p>
             </button>

@@ -5,3 +5,52 @@
     @apply font-semibold;
   }
 }
+
+@mixin ball {
+  @apply animate-bounce w-2 h-2 block mt-1 rounded-full;
+  content: '';
+
+  z-index: 2;
+  background: #0171cc;
+  animation: ball .45s cubic-bezier(0, 0, 0.15, 1) alternate infinite;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &::before {
+    @include ball;
+    border: none;
+    margin-right: 15px;
+  }
+
+  & span {
+    display: flex;
+    font-size: 0;
+    height: 10px;
+    position: relative;
+
+    &::before {
+      @include ball;
+      margin-left: -7px;
+      animation-delay: 0.3s;
+    }
+
+    &::after {
+      @include ball;
+      margin-left: 7px;
+      animation-delay: .5s;
+    }
+  }
+}
+
+@keyframes ball { 
+  from {
+    transform: translateY(0) scaleY(.8);
+  }
+  to {
+    transform: translateY(-10px);
+  }
+}

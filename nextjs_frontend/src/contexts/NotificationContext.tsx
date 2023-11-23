@@ -26,11 +26,11 @@ export function NotificationProvider({
   const [notifications, setNotifications] = useState<INotification[]>([]);
 
   useEffect(() => {
-    if (!session
-      || socket !== null
+    if (!session || socket !== null
       || typeof apiURL === "undefined"
     ) return;
     const newSocket = io(apiURL, {
+      path: "/wss/socket.io",
       transports: ["websocket"],
       auth: { email: session?.user?.email }
     });
