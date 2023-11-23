@@ -6,17 +6,13 @@ import { INotification } from "@/types/notification.dto";
 
 interface NotificationFlyMenuProps {
   notifications: INotification[];
-  onRemoveCard: Function;
+  onRemoveCard: (identifier: string) => void;
 }
 
 export default function NotificationFlyMenu({
   notifications,
   onRemoveCard
 }: NotificationFlyMenuProps) {
-  function handleRemoveCard(index: number) {
-    onRemoveCard(index);
-  }
-
   return (
     <Popover className="relative">
       <Popover.Button
@@ -36,15 +32,15 @@ export default function NotificationFlyMenu({
           <div className="h-6 w-6 bg-white rotate-45 transform origin-bottom-left border-2 border-gray-200" />
         </div>
         <div className={Styles.notificationBox}>
-          {notifications.map((notification, index) => (
+          {notifications.map((notification) => (
             <NotificationCard
-              key={index}
               type={notification.type}
+              key={notification.identifier}
               tenantName={notification.tenantName}
               tenantCpf={notification.tenantCpf}
               condominiumName={notification.condominiumName}
               message={notification.message}
-              onRemove={() => handleRemoveCard(index)}
+              onRemove={() => onRemoveCard(notification.identifier)}
             />
           ))}
           {notifications.length === 0 && (

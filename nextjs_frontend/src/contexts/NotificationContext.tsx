@@ -4,12 +4,12 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { INotification } from "@/types/notification.dto";
 import { apiURL } from "@/config";
 
-import io from 'socket.io-client';
+import io, { Socket } from 'socket.io-client';
 import { useSession } from "next-auth/react";
 
 interface NotificationContext {
   notifications: INotification[];
-  setNotifications: React.Dispatch<React.SetStateAction<INotification[]>>;
+  removeNotification: (notification: string) => void;
 }
 
 interface NotificationProviderProps {
@@ -22,23 +22,33 @@ export function NotificationProvider({
   children
 }: NotificationProviderProps) {
   const { data: session } = useSession();
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [notifications, setNotifications] = useState<INotification[]>([]);
 
   useEffect(() => {
-    if (!session || typeof apiURL === "undefined") return;
-    const socket = io(apiURL, {
+    if (!session
+      || socket !== null
+      || typeof apiURL === "undefined"
+    ) return;
+    const newSocket = io(apiURL, {
       transports: ["websocket"],
       auth: { email: session?.user?.email }
     });
 
-    socket.on('notification', data => {
+    setSocket(newSocket);
+    newSocket.on('notification', data => {
       setNotifications(prev => [...prev, data])
     })
   }, [session])
 
+  function removeNotification(notificationID: string) {
+    setNotifications(prev => prev.filter(n => n.identifier !== notificationID));
+    if (socket) socket.emit('remove-notification', notificationID);
+  }
+
   return (
     <NotificationContext.Provider
-      value={{ notifications, setNotifications }}>
+      value={{ notifications, removeNotification }}>
       {children}
     </NotificationContext.Provider>
   );
