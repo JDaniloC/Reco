@@ -23,7 +23,10 @@ function notificationMesssage(status: StatusType) {
 export function notificate(debtor: Devedor, agreement: Acordo) {
   if (agreement.status === "Acordo aceito" || agreement.status === "Acordo recusado") return;
 
-  const socket = io(apiURL as string, { transports: ["websocket"] });
+  const socket = io(apiURL as string, {
+    path: "/wss/socket.io",
+    transports: ["websocket"]
+  });
   const length = agreement.historicoValores.length;
   const lastProposalStatus = agreement.historicoValores[length - 1].status;
 

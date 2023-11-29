@@ -33,14 +33,6 @@ export function AcceptProposal({
   )
 }
 
-export function WaitForApproval({ name }: GenericMessageProps) {
-  return (
-    <div className="text-[#F59E0B] font-normal text-lg">
-      Agradecemos por compartilhar sua proposta, {name}. Estamos avaliando-a e retornaremos em breve.
-    </div>
-  )
-}
-
 export function ProposalDenied({ name, contact }: GenericMessageProps) {
   return (
     <div className="font-normal text-lg">
