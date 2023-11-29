@@ -19,7 +19,7 @@ def route_add_chat(client: ClientInfos) -> ThreadInfos:
 
     proposal = first_proposal(client)
     thread_info = ThreadInfos(client=client,
-                              messages=[proposal.message])
+                              messages=[proposal])
     chat_manager.add_thread(client.user_id, thread_info)
     return thread_info
 
@@ -49,15 +49,17 @@ def route_chat(user_id: int, message: str) -> Proposal:
         prev_proposal = second_proposal(thread.client)
         proposal = third_proposal(thread.client)
     else:
-        proposal.message.text = "Obrigado por negociar conosco!"
-        finished_chat = True
+        prev_proposal.confirm_text = message
 
     if prev_proposal.confirm_text == message:
-        proposal.message.text = CONFIRM_MSG
+        prev_proposal.message.text = CONFIRM_MSG
+        prev_proposal.confirm_text = ""
+        prev_proposal.deny_text = ""
+        proposal = prev_proposal
         finished_chat = True
 
-    thread.messages.append(message_data)
-    thread.messages.append(proposal.message)
+    thread.messages.append(Proposal(message=message_data))
+    thread.messages.append(proposal)
     proposal.is_finished = finished_chat
 
     return proposal

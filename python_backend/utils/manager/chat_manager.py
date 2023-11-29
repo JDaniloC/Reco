@@ -10,7 +10,7 @@ class ChatManager:
                          daemon=True).start()
 
     def add_thread(self, user_email: str, thread: ThreadInfos):
-        print(f"Client {user_email} created thread {thread}")
+        print(f"Client {user_email} created a thread")
         new_timeout = int(time.time()) + self.THREAD_TIMEOUT
         self.thread_timeouts[user_email] = new_timeout
         self.active_threads[user_email] = thread

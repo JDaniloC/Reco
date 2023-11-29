@@ -4,7 +4,7 @@ import { apiURL } from "@/config";
 import { useEffect, useState, useRef } from "react";
 
 import { ChatProps } from "../../types/views.dto";
-import { IMessage, IChatMessage } from "../../types/messages.dto";
+import { IMessage, IProposal } from "../../types/messages.dto";
 
 import Message from "../Message/message";
 
@@ -25,7 +25,7 @@ async function fetchStartChat(name: string, cpf: number, debit: number) {
     .catch((error) => {
       console.error(error);
       return { message: "Erro ao iniciar chat" };
-    })) as { messages: { role: string, text: string }[] };
+    })) as { messages: IProposal[] };
 }
 
 async function fetchSendMessage(cpf: number, message: string) {
@@ -36,46 +36,63 @@ async function fetchSendMessage(cpf: number, message: string) {
       return { messages: [ {
         text: "Ocorreu um problema...", role: "assistant"
       }] };
-    })) as IChatMessage;
+    })) as IProposal;
 }
 
 export default function Chat({ chatData }: ChatProps) {
+  const [isFinished, setIsFinished] = useState<boolean>(false);
+  const [iteractive, setIteractive] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
   const [messages, setMessages] = useState<IMessage[]>([]);
   const [message, setMessage] = useState<string>("");
   const chatContainer = useRef<HTMLDivElement>(null);
   const { isAllowed } = useChatContext();
 
   useEffect(() => {
+    if (chatContainer) chatContainer.current?.scrollTo(
+      0, chatContainer.current?.scrollHeight)
+  })
+
+  function createMessage({
+    confirm_text, deny_text, message, is_finished
+  }: IProposal): IMessage {
+    const iteractive = confirm_text !== "" && deny_text !== "";
+    const isBot = message.role === "assistant";
+    setIteractive(iteractive);
+    setIsFinished(is_finished);
+    return {
+      message: message.text, isBot, iteractive,
+      confirmText: confirm_text, denyText: deny_text,
+      onConfirm: () => { handleSendMessage(confirm_text) },
+      onDeny: () => { handleSendMessage(deny_text) },
+    }
+  }
+
+  useEffect(() => {
     async function getFirstMessage() {
       const { nome, cpf, valorDivida } = chatData;
       const cpfDevedor = Number(cpf.replaceAll(".", "").replaceAll("-", ""));
-      const { messages } = await fetchStartChat(nome, cpfDevedor, valorDivida);
-      setMessages(messages.map(message => ({
-        message: message.text, isBot: message.role === "assistant"
-      })));
+      const { messages } = await fetchStartChat(nome, cpfDevedor,
+                                                valorDivida);
+      setMessages(messages.map(message => createMessage(message)));
       setIsLoading(false);
     }
     getFirstMessage();
   }, [chatData]);
 
-  useEffect(() => {
-    if (chatContainer) chatContainer.current?.scrollTo(
-      0, chatContainer.current?.scrollHeight)
-  })
-
-  async function handleSendMessage() {
-    setMessages((prev) => [...prev, { message, isBot: false }]);
+  async function handleSendMessage(newMessage: string) {
     setIsLoading(true);
-
-    const userMessage = message;
+    setIteractive(false);
+    setMessages((prev) => [...prev, {
+      message: newMessage as string, isBot: false
+    }]);
     setMessage("");
 
     const cpfDevedor = Number(chatData.cpf.replaceAll(".", "")
                                           .replaceAll("-", ""));
-    const response = await fetchSendMessage(cpfDevedor, userMessage);
-    const { message: newMessage } = response;
-    setMessages((prev) => [...prev, { message: newMessage, isBot: true }]);
+    const response = await fetchSendMessage(cpfDevedor, newMessage);
+    setMessages((prev) => [...prev, createMessage(response)]);
     setIsLoading(false);
   }
 
@@ -84,9 +101,13 @@ export default function Chat({ chatData }: ChatProps) {
   }
 
   function handleKeyPress(event: any) {
-    if(event.key === 'Enter'){
-      handleSendMessage();
+    if (event.key === 'Enter') {
+      handleSendMessage(message);
     }
+  }
+
+  function handleSubmit() {
+    handleSendMessage(message);
   }
 
   return isAllowed && (
@@ -96,7 +117,14 @@ export default function Chat({ chatData }: ChatProps) {
       </h1>
       <div className="overflow-y-scroll flex-1" ref={chatContainer}>
         {messages.map((messageData, index) => (
-          <Message key={index} isBot={messageData.isBot}>
+          <Message key={index} isBot={messageData.isBot}
+            iteractive={messageData.iteractive &&
+                        index === messages.length - 1}
+            acceptText={messageData.confirmText}
+            onConfirm={messageData.onConfirm}
+            denyText={messageData.denyText}
+            onDeny={messageData.onDeny}
+          >
             <span dangerouslySetInnerHTML={{ __html: messageData.message }}/>
           </Message>
         ))}
@@ -105,21 +133,31 @@ export default function Chat({ chatData }: ChatProps) {
             <div className={Styles.loading}><span></span></div>
           </Message>
         )}
+        {isFinished && (
+          <Message isBot={true} iteractive={false}>
+            <div className="text-[#F59E0B] font-normal text-lg">
+              Agradecemos por compartilhar sua proposta, Estamos avaliando-a e retornaremos em breve.
+            </div>
+          </Message>
+        )}
       </div>
-      <div className="flex pr-4">
-        <input
-          value={message}
-          onChange={onMessageChange}
-          onKeyPress={handleKeyPress}
-          className="p-4 shadow-md w-full"
-          placeholder="Escreva sua mensagem"
-          type="text" name="message" id="message"
-        />
-        <button onClick={handleSendMessage}>
-          <img src="/icons/send.svg" alt="send image"
-            className="w-8 h-8"/>
-        </button>
-      </div>
+      
+      {(!isFinished && !iteractive) && (
+        <div className="flex pr-4">
+          <input
+            value={message}
+            onChange={onMessageChange}
+            onKeyPress={handleKeyPress}
+            className="p-4 shadow-md w-full"
+            placeholder="Escreva sua mensagem"
+            type="text" name="message" id="message"
+          />
+          <button onClick={handleSubmit}>
+            <img src="/icons/send.svg" alt="send image"
+              className="w-8 h-8"/>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

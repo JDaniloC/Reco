@@ -1,5 +1,3 @@
-import { Proposta } from "@/models/Acordos";
-
 export interface IMessage {
   message: string;
   isBot: boolean;
@@ -8,21 +6,17 @@ export interface IMessage {
   iteractive?: boolean;
   onConfirm?: () => void;
   onDeny?: () => void;
-
-  isUserInput?: boolean;
-  installment?: number;
-  reason?: string;
-  value?: number;
 }
 
-export interface IProposal extends Proposta {
-  message: string;
-  denyText: string;
-  confirmText: string;
-}
-
-export interface IChatMessage {
-    is_finished: boolean
-    question: string
-    message: string
+export interface IProposal {
+  message: {
+    role: string;
+    text: string;
+  };
+  entry: number
+  installments: number
+  installment_value: number
+  is_finished: boolean
+  confirm_text: string
+  deny_text: string
 }

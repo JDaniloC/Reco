@@ -9,15 +9,15 @@ class Message(BaseModel):
     role: str
     text: str
 
-class ThreadInfos(BaseModel):
-    client: ClientInfos
-    messages: list[Message]
-
 class Proposal(BaseModel):
     message: Message
-    entry: float
-    installments: int
-    installment_value: float
+    entry: float = 0
+    installments: int = 0
+    installment_value: float = 0
     is_finished: bool = False
-    confirm_text: str
-    deny_text: str
+    confirm_text: str = ""
+    deny_text: str = ""
+
+class ThreadInfos(BaseModel):
+    client: ClientInfos
+    messages: list[Proposal]
