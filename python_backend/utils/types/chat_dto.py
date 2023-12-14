@@ -1,13 +1,14 @@
 from pydantic import BaseModel
 
+class Message(BaseModel):
+    role: str
+    text: str
+
 class ClientInfos(BaseModel):
     name: str
     user_id: int
     total_debit: float
-
-class Message(BaseModel):
-    role: str
-    text: str
+    old_messages: list[Message] | None
 
 class Proposal(BaseModel):
     message: Message

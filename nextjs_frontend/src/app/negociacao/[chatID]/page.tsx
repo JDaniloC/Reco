@@ -34,7 +34,7 @@ export default async function ChatPage({ params }: ChatPageProps) {
                     justify-center flex-col-reverse sm:flex-row">
       <ChatProvider>
         <ChatModal cpf={chatData.cpf} />
-        <Chat chatData={chatData} />
+        <Chat chatData={chatData}/>
       </ChatProvider>
       <div className="sm:w-1/5 min-w-[200px] bg-gray-100 p-4">
         <h1 className="text-2xl font-medium">
