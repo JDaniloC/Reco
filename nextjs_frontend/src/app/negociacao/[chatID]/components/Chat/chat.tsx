@@ -1,41 +1,41 @@
 "use client";
 
-import { apiURL } from "@/config";
+import { serverURL } from "@/config";
 import { useEffect, useState, useRef } from "react";
 
 import { ChatProps } from "../../types/views.dto";
-import { IMessage, IProposal } from "../../types/messages.dto";
+import { IMessage } from "../../types/messages.dto";
+import { IProposal, InitialProposalParams } from "@/types/negotiation.dto";
 
 import Message from "../Message/message";
 
 import Styles from "./chat.module.scss";
 import { useChatContext } from "../../contexts/chat-context";
 
-async function fetchStartChat(name: string, cpf: number, debit: number) {
-  return (await fetch(`${apiURL}/api/v1/`, {
+async function fetchStartChat(params: InitialProposalParams) {
+  return (await fetch(`${serverURL}/api/chat/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      name: name,
-      user_id: cpf,
-      total_debit: debit,
-    }),
-  })
-    .then((response) => response.json())
+    body: JSON.stringify(params),
+  }).then((response) => response.json())
     .catch((error) => {
       console.error(error);
-      return { message: "Erro ao iniciar chat" };
+      return { messages: [] };
     })) as { messages: IProposal[] };
 }
 
-async function fetchSendMessage(cpf: number, message: string) {
-  return (await fetch(`${apiURL}/api/v1/?user_id=${cpf}&message=${message}`)
+async function fetchSendMessage(
+  agreementID: string, cpf: number, message: string
+) {
+  const url = `${serverURL}/api/chat/?cpf=${cpf}&text=${message}`;
+  return (await fetch(url + `&agreementID=${agreementID}`)
     .then((response) => response.json())
     .catch((error) => {
       console.error(error);
-      return { messages: [ {
-        text: "Ocorreu um problema...", role: "assistant"
-      }] };
+      return { message: {
+        text: "Ocorreu um problema...", role: "assistant",
+        confirm_text: "", deny_text: "", is_finished: false
+      }};
     })) as IProposal;
 }
 
@@ -57,7 +57,8 @@ export default function Chat({ chatData }: ChatProps) {
   function createMessage({
     confirm_text, deny_text, message, is_finished
   }: IProposal): IMessage {
-    const iteractive = confirm_text !== "" && deny_text !== "";
+    const iteractive = typeof confirm_text === "string" &&
+      confirm_text !== "" && deny_text !== "";
     const isBot = message.role === "assistant";
     setIteractive(iteractive);
     setIsFinished(is_finished);
@@ -71,10 +72,12 @@ export default function Chat({ chatData }: ChatProps) {
 
   useEffect(() => {
     async function getFirstMessage() {
-      const { nome, cpf, valorDivida } = chatData;
+      const { nome, cpf, valorDivida, identifier } = chatData;
       const cpfDevedor = Number(cpf.replaceAll(".", "").replaceAll("-", ""));
-      const { messages } = await fetchStartChat(nome, cpfDevedor,
-                                                valorDivida);
+      const { messages } = await fetchStartChat({
+        name: nome, cpf: cpfDevedor, debit: valorDivida,
+        agreementID: identifier
+      });
       setMessages(messages.map(message => createMessage(message)));
       setIsLoading(false);
     }
@@ -91,7 +94,9 @@ export default function Chat({ chatData }: ChatProps) {
 
     const cpfDevedor = Number(chatData.cpf.replaceAll(".", "")
                                           .replaceAll("-", ""));
-    const response = await fetchSendMessage(cpfDevedor, newMessage);
+    const response = await fetchSendMessage(
+      chatData.identifier, cpfDevedor, newMessage
+    );
     setMessages((prev) => [...prev, createMessage(response)]);
     setIsLoading(false);
   }
