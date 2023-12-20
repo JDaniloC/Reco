@@ -30,8 +30,8 @@ export default async function ChatPage({ params }: ChatPageProps) {
   const proposals = chatData.proposals;
 
   return (
-    <div className="flex w-full h-full max-h-[calc(100vh-4rem)] bg-gray-100
-                    justify-center flex-col-reverse sm:flex-row">
+    <div className="flex w-full h-full bg-gray-100 justify-center
+                    flex-col-reverse sm:flex-row">
       <ChatProvider>
         <ChatModal cpf={chatData.cpf} />
         <Chat chatData={chatData}/>
