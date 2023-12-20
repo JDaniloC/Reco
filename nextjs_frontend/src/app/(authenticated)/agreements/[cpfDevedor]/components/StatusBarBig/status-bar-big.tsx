@@ -8,9 +8,9 @@ interface StatusBarBigProps {
 
 const statusList: { title: StatusType }[] = [
   { title: "Aguardando inadimplente" },
+  { title: "Aguardando proposta" },
   { title: "Primeira proposta" },
-  { title: "Segunda proposta" },
-  { title: "Proposta do inadimplente" },
+  { title: "Disputando propostas" },
   { title: "Aguardando aprovação" },
 ];
 

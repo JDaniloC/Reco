@@ -21,9 +21,9 @@ interface AgreementListProps {
 const agreementStatusList: (StatusType | "Todos")[] = [
   "Todos",
   "Aguardando inadimplente",
+  "Aguardando proposta",
   "Primeira proposta",
-  "Segunda proposta",
-  "Proposta do inadimplente",
+  "Disputando propostas",
   "Aguardando aprovação",
 ];
 const agreementsPerPage = 6;
