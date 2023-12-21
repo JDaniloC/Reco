@@ -3,10 +3,9 @@ import { RegrasProposta } from "./Usuarios";
 
 export type StatusType =
   | "Aguardando inadimplente"
+  | "Aguardando proposta"
   | "Primeira proposta"
-  | "Segunda proposta"
-  | "Proposta do inadimplente"
-  | "Decisão do inadimplente"
+  | "Disputando propostas"
   | "Aguardando aprovação"
   | "Acordo aceito"
   | "Acordo recusado";
@@ -17,10 +16,9 @@ export interface Proposta {
   autor: AuthorType;
   aceito: boolean;
   entrada: number;
-  motivo?: string;
+  mensagem?: string;
   status: StatusType;
   qtdParcelas: number;
-  valorParcela: number;
 }
 
 export interface Acordo {
@@ -80,12 +78,11 @@ const AcordoSchema = new mongoose.Schema({
   historicoValores: [
     {
       autor: String,
-      motivo: String,
       status: String,
       entrada: Number,
       aceito: Boolean,
+      mensagem: String,
       qtdParcelas: Number,
-      valorParcela: Number,
     },
   ],
 });

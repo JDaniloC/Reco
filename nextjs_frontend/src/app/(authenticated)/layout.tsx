@@ -1,24 +1,30 @@
-import "./globals.css";
 import type { Metadata } from "next";
+
+import "../globals.css";
+import NoirPro from "@/config/fonts";
 import { Inter } from "next/font/google";
+
 import Header from "@/components/Header/header";
 import SideBar from "@/components/SideBar/sidebar";
 import Footer from "@/components/Footer/footer";
-import { NextAuthProvider } from "./providers";
-import { NotificationProvider } from "../contexts/NotificationContext";
+
+import { NotificationProvider } from "@/contexts/NotificationContext";
 import { SideBarProvider } from "@/contexts/SideBarContext";
-import NoirPro from "@/config/fonts";
+
+import { NextAuthProvider } from "./providers";
 
 const inter = Inter({ subsets: ["latin"] });
-
 export const metadata: Metadata = {
   title: "Reco",
   description: "Uma plataforma de resolução de acordos"
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+interface RootLayoutProps {
+  children: React.ReactNode
+}
+export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="en">
+    <html lang="pt-br">
       <body className={`${NoirPro.className} ${inter.className}`}>
         <NextAuthProvider>
           <NotificationProvider>
@@ -26,7 +32,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Header />
               <div className="w-full flex">
                 <SideBar />
-                <main className="w-full min-h-screen pt-20 flex flex-col items-center justify-between">
+                <main className="w-full min-h-screen flex flex-col
+                                 pt-20 items-center justify-between">
                   {children}
                 </main>
               </div>

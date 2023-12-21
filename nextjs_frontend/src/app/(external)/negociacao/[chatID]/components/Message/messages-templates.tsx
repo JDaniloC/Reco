@@ -67,7 +67,7 @@ export function UserInputMessage({
       </p>
       <p className="font-light text-base">
         <span className="font-normal">
-          Motivo:&nbsp;
+          Mensagem:&nbsp;
         </span>
         {reason}
       </p>

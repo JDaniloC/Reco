@@ -1,43 +1,15 @@
 "use client";
 
-import { serverURL } from "@/config";
+import { useChatContext } from "../../contexts/chat-context";
 import { useEffect, useState, useRef } from "react";
+import Styles from "./chat.module.scss";
 
 import { ChatProps } from "../../types/views.dto";
 import { IMessage } from "../../types/messages.dto";
-import { IProposal, InitialProposalParams } from "@/types/negotiation.dto";
+import { ProposalMessage } from "@/types/negotiation.dto";
 
 import Message from "../Message/message";
-
-import Styles from "./chat.module.scss";
-import { useChatContext } from "../../contexts/chat-context";
-
-async function fetchStartChat(params: InitialProposalParams) {
-  return (await fetch(`${serverURL}/api/chat/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(params),
-  }).then((response) => response.json())
-    .catch((error) => {
-      console.error(error);
-      return { messages: [] };
-    })) as { messages: IProposal[] };
-}
-
-async function fetchSendMessage(
-  agreementID: string, cpf: number, message: string
-) {
-  const url = `${serverURL}/api/chat/?cpf=${cpf}&text=${message}`;
-  return (await fetch(url + `&agreementID=${agreementID}`)
-    .then((response) => response.json())
-    .catch((error) => {
-      console.error(error);
-      return { message: {
-        text: "Ocorreu um problema...", role: "assistant",
-        confirm_text: "", deny_text: "", is_finished: false
-      }};
-    })) as IProposal;
-}
+import chatAPI from "./chat.api";
 
 export default function Chat({ chatData }: ChatProps) {
   const [isFinished, setIsFinished] = useState<boolean>(false);
@@ -54,31 +26,32 @@ export default function Chat({ chatData }: ChatProps) {
       0, chatContainer.current?.scrollHeight)
   })
 
-  function createMessage({
-    confirm_text, deny_text, message, is_finished
-  }: IProposal): IMessage {
-    const iteractive = typeof confirm_text === "string" &&
-      confirm_text !== "" && deny_text !== "";
-    const isBot = message.role === "assistant";
+  function createMessage(proposal: ProposalMessage): IMessage {
+    const { denyText, confirmText, isFinished } = proposal;
+    const iteractive = confirmText !== "" && denyText !== "";
+    const isBot = proposal.author === "Bot";
+
     setIteractive(iteractive);
-    setIsFinished(is_finished);
+    setIsFinished(isFinished);
+
     return {
-      message: message.text, isBot, iteractive,
-      confirmText: confirm_text, denyText: deny_text,
-      onConfirm: () => { handleSendMessage(confirm_text) },
-      onDeny: () => { handleSendMessage(deny_text) },
+      message: proposal.messageText,
+      isBot, iteractive, confirmText, denyText,
+      onConfirm: () => { handleSendMessage(confirmText) },
+      onDeny: () => { handleSendMessage(denyText) },
     }
   }
 
   useEffect(() => {
     async function getFirstMessage() {
       const { nome, cpf, valorDivida, identifier } = chatData;
-      const cpfDevedor = Number(cpf.replaceAll(".", "").replaceAll("-", ""));
-      const { messages } = await fetchStartChat({
+      const cpfDevedor = Number(cpf.replaceAll(".", "")
+                                   .replaceAll("-", ""));
+      const messages = await chatAPI.fetchStartChat({
         name: nome, cpf: cpfDevedor, debit: valorDivida,
         agreementID: identifier
       });
-      setMessages(messages.map(message => createMessage(message)));
+      setMessages(messages.map(msg => createMessage(msg.message)));
       setIsLoading(false);
     }
     getFirstMessage();
@@ -94,10 +67,22 @@ export default function Chat({ chatData }: ChatProps) {
 
     const cpfDevedor = Number(chatData.cpf.replaceAll(".", "")
                                           .replaceAll("-", ""));
-    const response = await fetchSendMessage(
+    const response = await chatAPI.fetchSendMessage(
       chatData.identifier, cpfDevedor, newMessage
     );
-    setMessages((prev) => [...prev, createMessage(response)]);
+
+    if (messages.length === 1 || response.proposal) {
+      chatAPI.fetchUpdateProposal(chatData.identifier, {
+        qtdParcelas: response.proposal?.installments || 0,
+        mensagem: response.proposal?.message || "",
+        autor: response.proposal?.author || "User",
+        entrada: response.proposal?.entry || 0,
+        aceito: response.message.isFinished,
+        status: "Aguardando proposta"
+      });
+    }
+
+    setMessages((prev) => [...prev, createMessage(response.message)]);
     setIsLoading(false);
   }
 
@@ -147,7 +132,7 @@ export default function Chat({ chatData }: ChatProps) {
         )}
       </div>
       
-      {(!isFinished && !iteractive) && (
+      {(!isFinished && !iteractive && !isLoading) && (
         <div className="flex pr-4">
           <input
             value={message}

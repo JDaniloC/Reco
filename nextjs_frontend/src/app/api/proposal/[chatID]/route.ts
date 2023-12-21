@@ -92,50 +92,50 @@ export async function POST(request: NextRequest, context: Context) {
     return NextResponse.json({ "error": "No agreement found" });
   }
   const agreement: AgreementAgg2 = agreements[0];
-  let status: StatusType = "Aguardando inadimplente";
-  const session = await getServerSession(options);
   const history = agreement.historicoValores;
-  if (session && history.length > 0 &&
-      history[history.length - 1].aceito) {
+
+  const session = await getServerSession(options);
+  let status: StatusType = "Aguardando proposta";
+  const canAccept = history.length > 0 &&
+      history[history.length - 1].aceito;
+  if (session && canAccept) {
+    status = "Acordo recusado";
     if (newProposal.aceito) {
       status = "Acordo aceito";
-    } else {
-      status = "Acordo recusado";
     }
   } else {
-    status = newProposal.status;
+    if (newProposal.aceito) {
+      status = "Aguardando aprovação";
+    } else if (history.length === 0) {
+      status = "Primeira proposta";
+    } else {
+      status = "Disputando propostas"
+    }
   }
 
-  const devedor: Devedor = agreement.devedor;
-  if (newProposal.autor === "User") {
-    agreement.entrada = newProposal.entrada;
-  } else {
-    agreement.entrada = devedor.valorDivida * newProposal.entrada;
-  }
-  agreement.qtdParcelas = newProposal.qtdParcelas;
-
-  if (!["Acordo aceito", "Acordo recusado",
-        "Decisão do inadimplente"].includes(status)) {
+  const noProposalStatus: StatusType[] = [
+    "Acordo aceito", "Acordo recusado", "Aguardando proposta"
+  ]
+  if (!noProposalStatus.includes(status)) {
     history.push(newProposal);
   }
 
-  agreement.dataAtualizacao = new Date();
-  agreement.status = status;
+  const { entrada, qtdParcelas } = newProposal;
+  const dataAtualizacao = new Date();
 
   const updatedProposal = await Acordos.findOneAndUpdate(
     { identificador },
     { $set: {
-      dataAtualizacao: agreement.dataAtualizacao,
-      status, entrada: agreement.entrada,
-      qtdParcelas: agreement.qtdParcelas,
+      dataAtualizacao, status,
+      entrada, qtdParcelas,
       historicoValores: history,
     } },
     { new: true }
   );
 
+  notificate(agreement.devedor, updatedProposal);
   revalidatePath("/negociacao/[chatID]/page");
   revalidatePath("/agreements/[chatID]/page");
   revalidatePath("/agreements/page");
-  notificate(devedor, updatedProposal);
   return NextResponse.json(updatedProposal);
 }

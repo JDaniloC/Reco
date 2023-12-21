@@ -3,9 +3,16 @@ import { connectToDatabase } from "@/middlewares/mongodb";
 import { apiURL } from "@/config";
 
 import Messages, { Message } from "@/models/Messages";
-import { IProposal, InitialProposalParams } from "@/types/negotiation.dto";
+import Acordos, { AuthorType, StatusType } from "@/models/Acordos";
+import { ApiProposal, ApiProposalResponse } from "./chat.dto";
+import {
+  InitialProposalParams,
+  TreatedApiProposal
+} from "@/types/negotiation.dto";
 
-export async function GET(request: NextRequest) {
+export async function GET(
+  request: NextRequest
+): Promise<NextResponse<TreatedApiProposal | { error: string }>> {
   connectToDatabase();
 
   const { searchParams } = new URL(request.url);
@@ -18,10 +25,13 @@ export async function GET(request: NextRequest) {
   }
 
   const url = `${apiURL}/api/v1/?user_id=${cpf}&message=${text}`;
-  const { message } = (await fetch(url).then((response) => response.json())
-    .catch(() => ({ message: {
-      text: "Ocorreu um problema...", role: "assistant"
-    }}))) as IProposal;
+  const response = (await fetch(url)
+    .then((response) => response.json())
+    .catch(() => ({
+      answer: { role: "assistant", text: "Occoreu um erro..."},
+      is_finished: false,
+      proposal: null
+    }))) as ApiProposalResponse;
 
   await Messages.insertMany([{
     acordoID: agreementID,
@@ -29,21 +39,65 @@ export async function GET(request: NextRequest) {
     autor: "User"
   }, {
     acordoID: agreementID,
-    texto: message.text,
+    texto: response.answer.text,
     autor: "Bot"
   }]);
 
-  return NextResponse.json({ message });
+  const {
+    confirm_text: confirmText,
+    is_finished: isFinished,
+    deny_text: denyText,
+    answer
+  } = response;
+
+  let proposal: TreatedApiProposal["proposal"] = null
+  if (response.proposal) {
+    const { installments, accepted, entry } = response.proposal;
+    const { role, text: message } = response.proposal.message;
+    proposal = {
+      installments, accepted, entry, message,
+      author: role === "assistant" ? "Bot" : "User"
+    };
+  }
+
+  const author: AuthorType = "Bot" as AuthorType;
+  return NextResponse.json({
+    message: {
+      messageText: answer.text, author,
+      isFinished, confirmText, denyText
+    },
+    proposal: proposal
+  });
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: NextRequest
+): Promise<NextResponse<TreatedApiProposal[]>> {
   connectToDatabase();
 
   const params: InitialProposalParams = await request.json();
-
+  const agreement = await Acordos.findOne({
+    identificador: params.agreementID
+  });
   const oldMessages = await Messages.find({
     acordoID: params.agreementID
   });
+
+  const finishedStatus: StatusType[] = [
+    "Acordo aceito", "Acordo recusado", "Aguardando aprovação"
+  ];
+  if (finishedStatus.includes(agreement.status)) {
+    return NextResponse.json(oldMessages.map(({ autor, texto }) => ({
+      message: {
+        author: autor,
+        isFinished: true,
+        messageText: texto,
+        confirmText: "",
+        denyText: ""
+      },
+      proposal: null
+    })));
+  }
 
   const initialProposal = (await fetch(`${apiURL}/api/v1/`, {
     method: "POST",
@@ -59,18 +113,27 @@ export async function POST(request: NextRequest) {
     }),
   }).then((response) => response.json())
     .catch(() => {
-      return { messages: [] };
-    })) as { messages: IProposal[] };
+      return { messages: [], is_finished: false };
+    })) as { messages: ApiProposal[], is_finished: boolean };
     
   const messages = initialProposal.messages;
   if (messages.length === 1) {
     const parsedMessages: Message[] = messages.map(({ message }) => ({
-        acordoID: params.agreementID,
-        texto: message.text,
-        autor: message.role === "assistant" ? "Bot" : "User"
-      }));
+      acordoID: params.agreementID,
+      texto: message.text,
+      autor: message.role === "assistant" ? "Bot" : "User"
+    }));
     await Messages.insertMany(parsedMessages);
   }
 
-  return NextResponse.json(initialProposal);
+  return NextResponse.json(messages.map(({ message }) => ({
+    message: {
+      author: message.role === "assistant" ? "Bot" : "User",
+      isFinished: initialProposal.is_finished,
+      messageText: message.text,
+      confirmText: "",
+      denyText: ""
+    },
+    proposal: null
+  })));
 }

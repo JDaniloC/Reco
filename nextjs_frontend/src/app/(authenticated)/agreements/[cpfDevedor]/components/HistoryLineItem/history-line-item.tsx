@@ -20,6 +20,9 @@ export default function HistoryLineItem({
         ? proposal.entrada
         : divida * proposal.entrada
       : 0;
+  const installmentValue = divida && proposal &&
+    proposal.qtdParcelas > 0 ?
+    (divida - value) / proposal.qtdParcelas : 0;
 
   return (
     <div className="w-full flex justify-center gap-5">
@@ -53,15 +56,15 @@ export default function HistoryLineItem({
                 &nbsp;
               </span>
               de&nbsp;
-              {proposal.valorParcela.toLocaleString("pt-BR", {
+              {installmentValue.toLocaleString("pt-BR", {
                 style: "currency",
                 currency: "BRL"
               })}
             </span>
-            {proposal.motivo && (
+            {proposal.mensagem && (
               <span className="text-sm text-zinc-500 w-40">
-                <span className="font-medium">Motivo:</span>&nbsp;
-                {proposal.motivo}
+                <span className="font-medium">Mensagem:</span>&nbsp;
+                {proposal.mensagem}
               </span>
             )}
             {proposal.aceito ? (
