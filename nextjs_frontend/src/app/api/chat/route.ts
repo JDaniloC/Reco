@@ -10,6 +10,8 @@ import {
   TreatedApiProposal
 } from "@/types/negotiation.dto";
 
+const errorMsg = "Minha conexão está ruim... Poderia repetir a pergunta?";
+
 export async function GET(
   request: NextRequest
 ): Promise<NextResponse<TreatedApiProposal | { error: string }>> {
@@ -25,23 +27,39 @@ export async function GET(
   }
 
   const url = `${apiURL}/api/v1/?user_id=${cpf}&message=${text}`;
-  const response = (await fetch(url)
-    .then((response) => response.json())
-    .catch(() => ({
-      answer: { role: "assistant", text: "Occoreu um erro..."},
-      is_finished: false,
-      proposal: null
-    }))) as ApiProposalResponse;
+  let response: ApiProposalResponse = {
+    answer: {
+      role: "assistant",
+      text: errorMsg,
+    },
+    is_finished: false,
+    proposal: null,
+    confirm_text: "",
+    deny_text: ""
+  };
+  for (let i = 0; i < 2 && response.answer.text === errorMsg; i++) {
+    const attemptResponse = (await fetch(url)
+      .then((response) => response.json())
+      .catch(() => null)) as ApiProposalResponse;
+    if (attemptResponse !== null) {
+      response = attemptResponse;
+    }
+  }
 
-  await Messages.insertMany([{
+  const newMessages: Message[] = [{
     acordoID: agreementID,
     texto: text,
     autor: "User"
-  }, {
-    acordoID: agreementID,
-    texto: response.answer.text,
-    autor: "Bot"
-  }]);
+  }];
+
+  if (response.answer.text !== errorMsg) {
+    newMessages.push({
+      acordoID: agreementID,
+      texto: response.answer.text,
+      autor: "Bot"
+    });
+  }
+  await Messages.insertMany(newMessages);
 
   const {
     confirm_text: confirmText,
@@ -117,7 +135,7 @@ export async function POST(
     })) as { messages: ApiProposal[], is_finished: boolean };
     
   const messages = initialProposal.messages;
-  if (messages.length === 1) {
+  if (oldMessages.length === 0 && messages.length === 1) {
     const parsedMessages: Message[] = messages.map(({ message }) => ({
       acordoID: params.agreementID,
       texto: message.text,
