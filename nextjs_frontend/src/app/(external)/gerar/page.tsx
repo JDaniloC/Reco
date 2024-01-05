@@ -30,10 +30,11 @@ export default function TestPage() {
   const [debit, setDebit] = React.useState<number>(0);
   const [identifier, setIdentifier] = React.useState<string>("");
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
-  const urlOrigin = window.location.origin + "/negociacao";
+  const urlOrigin = (typeof window === "undefined") ? "" :
+                    window.location.origin + "/negociacao";
 
   function handleCopyLink() {
-    if (!linkRef.current || typeof window === "undefined") return;
+    if (!linkRef.current) return;
     navigator.clipboard.writeText(`${urlOrigin}/${identifier}`);
     linkRef.current.textContent = "Link copiado!";
   }
