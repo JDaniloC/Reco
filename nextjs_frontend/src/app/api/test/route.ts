@@ -12,7 +12,7 @@ interface PartialDevedor {
   valorDivida: number;
 }
 
-const nomeCondominio = "teste@pbb.com.br"
+const nomeCondominio = "PBB"
 const emailAdministrador = "teste@pbb.com.br";
 
 function generateCPF(): string {
