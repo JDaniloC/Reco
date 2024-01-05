@@ -8,7 +8,7 @@ export default function ChatLoading() {
                       flex flex-col">
           <div className="w-2/5 shadow-md m-7 max-h-fit rounded-xl p-5">
               <p className="text-lg font-semibold">
-                Reco Bot
+                Barden
               </p>
               <div className="bg-gray-200 h-10 transition-transform 
                             ease-in-out duration-300 animate-pulse

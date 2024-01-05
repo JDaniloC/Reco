@@ -6,7 +6,10 @@ import Styles from "./chat.module.scss";
 
 import { ChatProps } from "../../types/views.dto";
 import { IMessage } from "../../types/messages.dto";
-import { ProposalMessage } from "@/types/negotiation.dto";
+import {
+  ProposalMessage,
+  TreatedApiProposal
+} from "@/types/negotiation.dto";
 
 import Message from "../Message/message";
 import chatAPI from "./chat.api";
@@ -28,7 +31,8 @@ export default function Chat({ chatData }: ChatProps) {
 
   function createMessage(proposal: ProposalMessage): IMessage {
     const { denyText, confirmText, isFinished } = proposal;
-    const iteractive = confirmText !== "" && denyText !== "";
+    const iteractive = confirmText !== "" && denyText !== "" &&
+                       typeof confirmText !== "undefined";
     const isBot = proposal.author === "Bot";
 
     setIteractive(iteractive);
@@ -47,10 +51,13 @@ export default function Chat({ chatData }: ChatProps) {
       const { nome, cpf, valorDivida, identifier } = chatData;
       const cpfDevedor = Number(cpf.replaceAll(".", "")
                                    .replaceAll("-", ""));
-      const messages = await chatAPI.fetchStartChat({
-        name: nome, cpf: cpfDevedor, debit: valorDivida,
-        agreementID: identifier
-      });
+      let messages = [] as TreatedApiProposal[];
+      for (let i = 0; i < 2 && messages.length === 0; i++) {
+        messages = await chatAPI.fetchStartChat({
+          name: nome, cpf: cpfDevedor, debit: valorDivida,
+          agreementID: identifier
+        });
+      }
       setMessages(messages.map(msg => createMessage(msg.message)));
       setIsLoading(false);
     }

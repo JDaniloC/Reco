@@ -27,7 +27,10 @@ interface ChatPageProps {
 export default async function ChatPage({ params }: ChatPageProps) {
   const chatData = await fetchChatData(params.chatID);
 
-  if (!chatData) return <LoadingBar />;
+  if (!chatData || 'error' in chatData) {
+    console.error(chatData);
+    return <LoadingBar />;
+  }
 
   return (
     <div className="flex w-full h-full bg-gray-100 justify-center

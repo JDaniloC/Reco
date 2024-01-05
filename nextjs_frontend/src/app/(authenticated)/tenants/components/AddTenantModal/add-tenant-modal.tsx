@@ -6,6 +6,20 @@ import { faker } from '@faker-js/faker/locale/pt_BR';
 import Button from "@/components/Button/button";
 import SnackBar from "@/components/SnackBar/snack-bar";
 
+async function addTenant(tenantInfo: Devedor) {
+  return (await fetch(`${serverURL}/api/tenants/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(tenantInfo)
+  }).then((response) => response.json())
+    .catch((error) => {
+      console.error(error);
+      return null;
+    })) as Devedor[] | null;
+}
+
 interface AddTenantModalProps {
   onClose: () => void;
 }
@@ -61,21 +75,13 @@ export default function AddTenantModal({ onClose }: AddTenantModalProps) {
       return setSnackbarMessage("Preencha a Mensalidade média!");
     }
 
-    const response = await fetch(`${serverURL}/api/tenants/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        ...form,
-        nomeCondominio: nomeCondominio,
-        mensalidadesAtrasadas: Math.floor(valorDivida / averageDebit)
-      })
+    const response = await addTenant({
+      ...form,
+      nomeCondominio: nomeCondominio,
+      mensalidadesAtrasadas: Math.floor(valorDivida / averageDebit)
     });
 
-    if (response.ok) {
-      onClose();
-    }
+    if (response !== null) onClose();
   };
 
   return (

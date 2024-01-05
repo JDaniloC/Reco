@@ -57,7 +57,8 @@ export default function DebtorCard({
       </div>
       <button
         onClick={handleRemoveTenant}
-        className="text-5xl text-gray-500 hover:text-gray-700 ml-[-3rem]">
+        className="text-5xl text-gray-500 hover:text-gray-700
+                   sm:relative sm:right-auto absolute right-12">
         &times;
       </button>
     </div>
