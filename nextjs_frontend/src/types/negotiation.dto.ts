@@ -11,11 +11,11 @@ export interface NegotiationData extends Devedor {
 }
 
 export interface ProposalMessage {
+  confirmText?: string;
   messageText: string;
   isFinished: boolean;
-  confirmText: string;
   author: AuthorType;
-  denyText: string;
+  denyText?: string;
 }
 
 export interface ProposalInfos {

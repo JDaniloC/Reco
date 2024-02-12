@@ -134,7 +134,6 @@ export async function POST(request: NextRequest, context: Context) {
   );
 
   notificate(agreement.devedor, updatedProposal);
-  revalidatePath("/negociacao/[chatID]/page");
   revalidatePath("/agreements/[chatID]/page");
   revalidatePath("/agreements/page");
   return NextResponse.json(updatedProposal);

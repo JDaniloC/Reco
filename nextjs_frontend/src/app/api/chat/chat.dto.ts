@@ -10,10 +10,27 @@ export interface ApiProposal {
   installments: number
 }
 
+export interface ApiAnswer {
+  confirm_text?: string
+  deny_text?: string
+  is_finished: boolean;
+  message: ApiMessage;
+}
+
 export interface ApiProposalResponse {
   proposal: ApiProposal | null;
-  is_finished: boolean;
-  confirm_text: string
-  answer: ApiMessage;
-  deny_text: string
+  answer: ApiAnswer;
+}
+
+export const errorMsg = "Minha conexão está ruim... Poderia repetir?";
+
+export const defaultApiProposalResponse: ApiProposalResponse = {
+  proposal: null,
+  answer: {
+    is_finished: false,
+    message: {
+      role: "assistant",
+      text: errorMsg
+    }
+  }
 }

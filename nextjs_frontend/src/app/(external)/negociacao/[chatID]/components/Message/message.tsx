@@ -1,7 +1,7 @@
 interface MessageProps {
   isBot: boolean;
   children: React.ReactNode;
-  iteractive?: boolean;
+  iterative?: boolean;
   acceptText?: string;
   denyText?: string;
   onConfirm?: () => void;
@@ -9,11 +9,11 @@ interface MessageProps {
 }
 
 export default function Message({
-  isBot, children, iteractive,
+  isBot, children, iterative,
   acceptText = "Aceitar acordo",
   denyText = "Recusar acordo",
   onConfirm, onDeny,
-}: MessageProps) {
+}: Readonly<MessageProps>) {
   const styles = isBot ? "" : "min-[640px]:ml-auto text-white bg-[#0171cc]";
 
   return (
@@ -21,9 +21,9 @@ export default function Message({
                     ${styles} sm:w-4/5 font-normal`}
     >
       <div className="text-base">{children}</div>
-      {iteractive ? (
+      {iterative ? (
         <div className="flex flex-col mt-8">
-          Clique na opção que se adequa a sua situação:
+          Clique na opção que se adéque a sua situação:
           <div className="grid grid-cols-2 w-full mt-2 lg:w-4/5 gap-2">
             <button
               onClick={onConfirm}

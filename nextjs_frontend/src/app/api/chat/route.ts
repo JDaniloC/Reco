@@ -4,13 +4,16 @@ import { apiURL } from "@/config";
 
 import Messages, { Message } from "@/models/Messages";
 import Acordos, { AuthorType, StatusType } from "@/models/Acordos";
-import { ApiProposal, ApiProposalResponse } from "./chat.dto";
+import {
+  errorMsg,
+  ApiProposal,
+  ApiProposalResponse,
+  defaultApiProposalResponse,
+} from "./chat.dto";
 import {
   InitialProposalParams,
   TreatedApiProposal
 } from "@/types/negotiation.dto";
-
-const errorMsg = "Minha conexão está ruim... Poderia repetir a pergunta?";
 
 export async function GET(
   request: NextRequest
@@ -27,22 +30,15 @@ export async function GET(
   }
 
   const url = `${apiURL}/api/v1/?user_id=${cpf}&message=${text}`;
-  let response: ApiProposalResponse = {
-    answer: {
-      role: "assistant",
-      text: errorMsg,
-    },
-    is_finished: false,
-    proposal: null,
-    confirm_text: "",
-    deny_text: ""
-  };
-  for (let i = 0; i < 2 && response.answer.text === errorMsg; i++) {
+  let response: ApiProposalResponse = defaultApiProposalResponse;
+  let lastMessageText = response.answer.message.text;
+  for (let i = 0; i < 2 && lastMessageText === errorMsg; i++) {
     const attemptResponse = (await fetch(url)
       .then((response) => response.json())
       .catch(() => null)) as ApiProposalResponse;
     if (attemptResponse !== null) {
       response = attemptResponse;
+      lastMessageText = response.answer.message.text;
     }
   }
 
@@ -52,10 +48,10 @@ export async function GET(
     autor: "User"
   }];
 
-  if (response.answer.text !== errorMsg) {
+  if (lastMessageText !== errorMsg) {
     newMessages.push({
+      texto: lastMessageText,
       acordoID: agreementID,
-      texto: response.answer.text,
       autor: "Bot"
     });
   }
@@ -65,8 +61,8 @@ export async function GET(
     confirm_text: confirmText,
     is_finished: isFinished,
     deny_text: denyText,
-    answer
-  } = response;
+    message: answer
+  } = response.answer;
 
   let proposal: TreatedApiProposal["proposal"] = null
   if (response.proposal) {
@@ -84,7 +80,7 @@ export async function GET(
       messageText: answer.text, author,
       isFinished, confirmText, denyText
     },
-    proposal: proposal
+    proposal
   });
 }
 
@@ -133,7 +129,7 @@ export async function POST(
     .catch(() => {
       return { messages: [], is_finished: false };
     })) as { messages: ApiProposal[], is_finished: boolean };
-    
+
   const messages = initialProposal.messages;
   if (oldMessages.length === 0 && messages.length === 1) {
     const parsedMessages: Message[] = messages.map(({ message }) => ({
