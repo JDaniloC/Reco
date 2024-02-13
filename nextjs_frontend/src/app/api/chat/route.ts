@@ -6,7 +6,7 @@ import Messages, { Message } from "@/models/Messages";
 import Acordos, { AuthorType, StatusType } from "@/models/Acordos";
 import {
   errorMsg,
-  ApiProposal,
+  ApiPostResponse,
   ApiProposalResponse,
   defaultApiProposalResponse,
 } from "./chat.dto";
@@ -29,11 +29,20 @@ export async function GET(
     return NextResponse.json({ "error": "Missing params" });
   }
 
-  const url = `${apiURL}/api/v1/?user_id=${cpf}&message=${text}`;
+  const value = searchParams.get("value");
+  const installments = searchParams.get("installments");
+
+  let baseURL = `${apiURL}/api/v1/`;
+  let params = `?user_id=${cpf}&message=${text}`;
+  if (value && installments) {
+    baseURL += "proposal/";
+    params += `&value=${value}&installments=${installments}`;
+  }
+
   let response: ApiProposalResponse = defaultApiProposalResponse;
   let lastMessageText = response.answer.message.text;
   for (let i = 0; i < 2 && lastMessageText === errorMsg; i++) {
-    const attemptResponse = (await fetch(url)
+    const attemptResponse = (await fetch(baseURL+params)
       .then((response) => response.json())
       .catch(() => null)) as ApiProposalResponse;
     if (attemptResponse !== null) {
@@ -58,6 +67,7 @@ export async function GET(
   await Messages.insertMany(newMessages);
 
   const {
+    require_input: inputRequired,
     confirm_text: confirmText,
     is_finished: isFinished,
     deny_text: denyText,
@@ -77,8 +87,8 @@ export async function GET(
   const author: AuthorType = "Bot" as AuthorType;
   return NextResponse.json({
     message: {
-      messageText: answer.text, author,
-      isFinished, confirmText, denyText
+      messageText: answer.text, author, isFinished,
+      confirmText, denyText, inputRequired
     },
     proposal
   });
@@ -106,6 +116,7 @@ export async function POST(
         author: autor,
         isFinished: true,
         messageText: texto,
+        inputRequired: false,
         confirmText: "",
         denyText: ""
       },
@@ -127,10 +138,10 @@ export async function POST(
     }),
   }).then((response) => response.json())
     .catch(() => {
-      return { messages: [], is_finished: false };
-    })) as { messages: ApiProposal[], is_finished: boolean };
+      return { messages: [], answer: defaultApiProposalResponse.answer };
+    })) as ApiPostResponse;
 
-  const messages = initialProposal.messages;
+  const { messages, answer } = initialProposal;
   if (oldMessages.length === 0 && messages.length === 1) {
     const parsedMessages: Message[] = messages.map(({ message }) => ({
       acordoID: params.agreementID,
@@ -143,10 +154,11 @@ export async function POST(
   return NextResponse.json(messages.map(({ message }) => ({
     message: {
       author: message.role === "assistant" ? "Bot" : "User",
-      isFinished: initialProposal.is_finished,
       messageText: message.text,
-      confirmText: "",
-      denyText: ""
+      denyText: answer.deny_text,
+      isFinished: answer.is_finished,
+      confirmText: answer.confirm_text,
+      inputRequired: answer.require_input
     },
     proposal: null
   })));

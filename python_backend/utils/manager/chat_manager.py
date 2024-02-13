@@ -1,4 +1,4 @@
-from utils.types import ThreadInfos
+from utils.types import ThreadInfos, Message
 import threading, time
 
 class ChatManager:
@@ -14,6 +14,12 @@ class ChatManager:
         new_timeout = int(time.time()) + self.THREAD_TIMEOUT
         self.thread_timeouts[user_email] = new_timeout
         self.active_threads[user_email] = thread
+
+    def update_messages(self, user_id: str, messages: list[Message]):
+        thread = self.active_threads.get(str(user_id))
+        if thread is None: return
+
+        thread.client.old_messages = messages
 
     def remove_thread(self, user_email: str):
         self.active_threads.pop(user_email, None)

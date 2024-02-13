@@ -18,17 +18,18 @@ async function fetchStartChat(params: InitialProposalParams) {
 }
 
 async function fetchSendMessage(
-  agreementID: string, cpf: number, message: string
+  agreementID: string, cpf: number, message: string,
+  value?: number, installments?: number
 ) {
-  const url = `${serverURL}/api/chat/?cpf=${cpf}&text=${message}`;
+  let url = `${serverURL}/api/chat/?cpf=${cpf}&text=${message}`;
+  if (value && installments) {
+    url += `&value=${value}&installments=${installments}`;
+  }
   return (await fetch(url + `&agreementID=${agreementID}`)
     .then((response) => response.json())
     .catch((error) => {
       console.error(error);
-      return { message: {
-        text: "Ocorreu um problema...", role: "assistant",
-        confirm_text: "", deny_text: "", is_finished: false
-      }};
+      return { message: { messageText: "Ocorreu um problema..." }};
     })) as TreatedApiProposal;
 }
 

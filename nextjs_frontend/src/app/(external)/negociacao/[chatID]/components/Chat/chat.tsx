@@ -12,12 +12,15 @@ import {
   TreatedApiProposal
 } from "@/types/negotiation.dto";
 
+import { UserInputMessageProps } from "@/components/UserInput/user-input.dto";
+import UserInput from "@/components/UserInput/user-input";
 import Message from "../Message/message";
 import chatAPI from "./chat.api";
 
 export default function Chat({ chatData }: ChatProps) {
   const [isFinished, setIsFinished] = useState<boolean>(false);
   const [iterative, setIterative] = useState<boolean>(false);
+  const [showInput, setShowInput] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const [messages, setMessages] = useState<IMessage[]>([]);
@@ -31,13 +34,14 @@ export default function Chat({ chatData }: ChatProps) {
   })
 
   function createMessage(proposal: ProposalMessage): IMessage {
-    const { denyText, confirmText, isFinished } = proposal;
+    const { denyText, confirmText, isFinished, inputRequired } = proposal;
     const iterative = confirmText !== "" && denyText !== "" &&
                       typeof confirmText !== "undefined";
     const isBot = proposal.author === "Bot";
 
     setIterative(iterative);
     setIsFinished(isFinished);
+    setShowInput(inputRequired);
 
     return {
       message: proposal.messageText,
@@ -71,7 +75,9 @@ export default function Chat({ chatData }: ChatProps) {
     getFirstMessage();
   }, [chatData]);
 
-  async function handleSendMessage(message?: string) {
+  async function handleSendMessage(
+    message?: string, value?: number, installments?: number
+  ) {
     if (!message) return;
 
     setIsLoading(true);
@@ -82,7 +88,7 @@ export default function Chat({ chatData }: ChatProps) {
     const cpfDevedor = Number(chatData.cpf.replaceAll(".", "")
                                           .replaceAll("-", ""));
     const response = await chatAPI.fetchSendMessage(
-      chatData.identifier, cpfDevedor, message
+      chatData.identifier, cpfDevedor, message, value, installments
     );
 
     if (messages.length === 1 || response.proposal) {
@@ -95,6 +101,13 @@ export default function Chat({ chatData }: ChatProps) {
 
     setMessages((prev) => [...prev, createMessage(response.message)]);
     setIsLoading(false);
+  }
+
+  function sendProposal(proposal: UserInputMessageProps) {
+    const message = `Proposta: R$${proposal.value.toFixed(2)} em ` +
+                    `${proposal.installment} parcelas. ` +
+                    `Motivo: ${proposal.reason}`;
+    handleSendMessage(message, proposal.value, proposal.installment);
   }
 
   function onMessageChange(event: any) {
@@ -142,7 +155,7 @@ export default function Chat({ chatData }: ChatProps) {
         )}
       </div>
       
-      {(!isFinished && !iterative && !isLoading) && (
+      {(!isFinished && !iterative && !isLoading && !showInput) && (
         <div className="flex pr-4">
           <input
             value={message}
@@ -158,6 +171,12 @@ export default function Chat({ chatData }: ChatProps) {
           </button>
         </div>
       )}
+
+      {showInput && <UserInput
+        divida={chatData.valorDivida}
+        onConfirm={sendProposal}
+        showReason={true}
+      />}
     </div>
   );
 }
