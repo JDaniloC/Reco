@@ -1,6 +1,6 @@
 from utils import (ClientInfos, ThreadInfos, Proposal, Message, Messages,
-                   ProposalResponse, UserProposal, chat_manager,
-                   evaluate_proposal, get_proposal_answer_idx)
+                   ProposalResponse, get_proposal_answer_idx,
+                   evaluate_proposal, chat_manager)
 from fastapi import APIRouter, HTTPException
 
 router = APIRouter()
