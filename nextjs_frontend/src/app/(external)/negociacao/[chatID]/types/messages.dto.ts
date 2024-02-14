@@ -3,7 +3,7 @@ export interface IMessage {
   isBot: boolean;
   denyText?: string;
   confirmText?: string;
-  iteractive?: boolean;
+  iterative?: boolean;
   onConfirm?: () => void;
   onDeny?: () => void;
 }

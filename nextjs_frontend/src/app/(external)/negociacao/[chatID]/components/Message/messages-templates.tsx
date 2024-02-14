@@ -6,7 +6,7 @@ import { UserInputMessageProps } from "@/components/UserInput/user-input.dto"
 
 export function AcceptProposal({
   author, value, debit, installment
-}: AcceptProposalProps) {
+}: Readonly<AcceptProposalProps>) {
   const newValue = author === "Bot" ? (value * debit) : value;
   const installmentValue = (debit - newValue) / installment;
   
@@ -33,7 +33,7 @@ export function AcceptProposal({
   )
 }
 
-export function ProposalDenied({ name, contact }: GenericMessageProps) {
+export function ProposalDenied({ name, contact }: Readonly<GenericMessageProps>) {
   return (
     <div className="font-normal text-lg">
       <p className="text-primary">
@@ -47,7 +47,7 @@ export function ProposalDenied({ name, contact }: GenericMessageProps) {
 
 export function UserInputMessage({
   value, installment, reason
-}: UserInputMessageProps) {
+}: Readonly<UserInputMessageProps>) {
   return (
     <div>
       <p className="font-normal text-xl mb-5">

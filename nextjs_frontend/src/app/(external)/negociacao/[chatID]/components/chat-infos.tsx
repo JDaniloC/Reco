@@ -1,13 +1,14 @@
+"use client";
+
 import { NegotiationData } from "@/types/negotiation.dto";
+import { useChatContext } from "../contexts/chat-context";
 
 interface ChatInfosProps {
   chatData: NegotiationData;
 }
 
-export default function ChatInfos({ chatData }: ChatInfosProps) {
-  const proposals = chatData.proposals;
-  const lastProposal = proposals.length > 0 ?
-      proposals[proposals.length - 1] : null;
+export default function ChatInfos({ chatData }: Readonly<ChatInfosProps>) {
+  const { proposal } = useChatContext();
 
   return (
     <div className="sm:w-1/5 min-w-[200px] bg-gray-100 p-4">
@@ -22,16 +23,16 @@ export default function ChatInfos({ chatData }: ChatInfosProps) {
       <p className="font-normal text-xl">
         {chatData.mensalidadesAtrasadas} meses
       </p>
-      {lastProposal && (
+      {proposal && (
         <>
         <p className="text-gray-400 mt-4"> Proposta de entrada </p>
         <p className="font-normal text-xl">
-          R$ {lastProposal.entrada < 0 ? lastProposal.entrada :
-              lastProposal.entrada * chatData.valorDivida}
+          R$ {proposal.entrada > 0 ? proposal.entrada :
+              proposal.entrada * chatData.valorDivida}
         </p>
         <p className="text-gray-400 mt-4"> Proposta de parcelamento </p>
         <p className="font-normal text-xl">
-          {lastProposal.qtdParcelas} meses
+          {proposal.qtdParcelas} meses
         </p>
         </>
       )}

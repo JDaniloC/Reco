@@ -4,25 +4,29 @@ import { useChatContext } from "../../contexts/chat-context";
 import { useEffect, useState, useRef } from "react";
 import Styles from "./chat.module.scss";
 
-import { ChatProps } from "../../types/views.dto";
 import { IMessage } from "../../types/messages.dto";
+import { ChatProps } from "../../types/views.dto";
+import { StatusType } from "@/models/Acordos";
 import {
   ProposalMessage,
   TreatedApiProposal
 } from "@/types/negotiation.dto";
 
+import { UserInputMessageProps } from "@/components/UserInput/user-input.dto";
+import UserInput from "@/components/UserInput/user-input";
 import Message from "../Message/message";
 import chatAPI from "./chat.api";
 
 export default function Chat({ chatData }: ChatProps) {
   const [isFinished, setIsFinished] = useState<boolean>(false);
-  const [iteractive, setIteractive] = useState<boolean>(false);
+  const [iterative, setIterative] = useState<boolean>(false);
+  const [showInput, setShowInput] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const [messages, setMessages] = useState<IMessage[]>([]);
   const [message, setMessage] = useState<string>("");
   const chatContainer = useRef<HTMLDivElement>(null);
-  const { isAllowed } = useChatContext();
+  const { isAllowed, makeProposal } = useChatContext();
 
   useEffect(() => {
     if (chatContainer) chatContainer.current?.scrollTo(
@@ -30,17 +34,18 @@ export default function Chat({ chatData }: ChatProps) {
   })
 
   function createMessage(proposal: ProposalMessage): IMessage {
-    const { denyText, confirmText, isFinished } = proposal;
-    const iteractive = confirmText !== "" && denyText !== "" &&
-                       typeof confirmText !== "undefined";
+    const { denyText, confirmText, isFinished, inputRequired } = proposal;
+    const iterative = confirmText !== "" && denyText !== "" &&
+                      typeof confirmText !== "undefined";
     const isBot = proposal.author === "Bot";
 
-    setIteractive(iteractive);
+    setIterative(iterative);
     setIsFinished(isFinished);
+    setShowInput(inputRequired);
 
     return {
       message: proposal.messageText,
-      isBot, iteractive, confirmText, denyText,
+      isBot, iterative, confirmText, denyText,
       onConfirm: () => { handleSendMessage(confirmText) },
       onDeny: () => { handleSendMessage(denyText) },
     }
@@ -59,38 +64,50 @@ export default function Chat({ chatData }: ChatProps) {
         });
       }
       setMessages(messages.map(msg => createMessage(msg.message)));
+      if (chatData.proposals.length > 0) {
+        const { proposals } = chatData;
+        const lastIndex = proposals.length - 1;
+        const lastProposal = proposals[lastIndex];
+        makeProposal(lastProposal, chatData.status);
+      }
       setIsLoading(false);
     }
     getFirstMessage();
   }, [chatData]);
 
-  async function handleSendMessage(newMessage: string) {
+  async function handleSendMessage(
+    message?: string, value?: number, installments?: number
+  ) {
+    if (!message) return;
+
     setIsLoading(true);
-    setIteractive(false);
-    setMessages((prev) => [...prev, {
-      message: newMessage as string, isBot: false
-    }]);
+    setIterative(false);
+    setMessages((prev) => [...prev, { message, isBot: false }]);
     setMessage("");
 
     const cpfDevedor = Number(chatData.cpf.replaceAll(".", "")
                                           .replaceAll("-", ""));
     const response = await chatAPI.fetchSendMessage(
-      chatData.identifier, cpfDevedor, newMessage
+      chatData.identifier, cpfDevedor, message, value, installments
     );
 
     if (messages.length === 1 || response.proposal) {
-      chatAPI.fetchUpdateProposal(chatData.identifier, {
-        qtdParcelas: response.proposal?.installments || 0,
-        mensagem: response.proposal?.message || "",
-        autor: response.proposal?.author || "User",
-        entrada: response.proposal?.entry || 0,
-        aceito: response.message.isFinished,
-        status: "Aguardando proposta"
-      });
+      const status = "Aguardando proposta" as StatusType;
+      const newProposal = makeProposal(response, status);
+      if (newProposal.entrada > 0 || newProposal.qtdParcelas > 0) {
+        chatAPI.fetchUpdateProposal(chatData.identifier, newProposal);
+      }
     }
 
     setMessages((prev) => [...prev, createMessage(response.message)]);
     setIsLoading(false);
+  }
+
+  function sendProposal(proposal: UserInputMessageProps) {
+    const message = `Proposta: R$${proposal.value.toFixed(2)} em ` +
+                    `${proposal.installment} parcelas. ` +
+                    `Motivo: ${proposal.reason}`;
+    handleSendMessage(message, proposal.value, proposal.installment);
   }
 
   function onMessageChange(event: any) {
@@ -115,8 +132,7 @@ export default function Chat({ chatData }: ChatProps) {
       <div className="overflow-y-scroll flex-1" ref={chatContainer}>
         {messages.map((messageData, index) => (
           <Message key={index} isBot={messageData.isBot}
-            iteractive={messageData.iteractive &&
-                        index === messages.length - 1}
+            iterative={messageData.iterative && index === messages.length - 1}
             acceptText={messageData.confirmText}
             onConfirm={messageData.onConfirm}
             denyText={messageData.denyText}
@@ -126,12 +142,12 @@ export default function Chat({ chatData }: ChatProps) {
           </Message>
         ))}
         {isLoading && (
-          <Message isBot={true} iteractive={false}>
+          <Message isBot={true} iterative={false}>
             <div className={Styles.loading}><span></span></div>
           </Message>
         )}
         {isFinished && (
-          <Message isBot={true} iteractive={false}>
+          <Message isBot={true} iterative={false}>
             <div className="text-[#F59E0B] font-normal text-lg">
               Agradecemos por compartilhar sua proposta, Estamos avaliando-a e retornaremos em breve.
             </div>
@@ -139,7 +155,7 @@ export default function Chat({ chatData }: ChatProps) {
         )}
       </div>
       
-      {(!isFinished && !iteractive && !isLoading) && (
+      {(!isFinished && !iterative && !isLoading && !showInput) && (
         <div className="flex pr-4">
           <input
             value={message}
@@ -150,11 +166,17 @@ export default function Chat({ chatData }: ChatProps) {
             type="text" name="message" id="message"
           />
           <button onClick={handleSubmit}>
-            <img src="/icons/send.svg" alt="send image"
-              className="w-8 h-8"/>
+            <img src="/icons/send.svg" alt="send button icon"
+                 className="w-8 h-8"/>
           </button>
         </div>
       )}
+
+      {showInput && <UserInput
+        divida={chatData.valorDivida}
+        onConfirm={sendProposal}
+        showReason={true}
+      />}
     </div>
   );
 }
