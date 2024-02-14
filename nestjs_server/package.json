@@ -8,6 +8,7 @@
   "engines": {
     "node": ">=18.x"
   },
+  "prestart": "yarn build --prefix client",
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
