@@ -1,8 +1,6 @@
 build:
   docker:
-    web: python_backend/Dockerfile
-    whatsapp: nestjs_server/Dockerfile
+    web: nestjs_server/Dockerfile
   
 run:
-  web: uvicorn main:app --host 0.0.0.0 --port $PORT
-  whatsapp: npm run start:prod
+  web: npm run start:prod
