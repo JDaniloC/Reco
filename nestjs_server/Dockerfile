@@ -10,7 +10,7 @@ COPY . .
 FROM installer AS builder
 WORKDIR /app/src/app
 
-RUN npm run build
+RUN npm install -g @nestjs/cli && npm run build
 
 FROM builder AS production
 WORKDIR /app/src/app
