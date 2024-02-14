@@ -1,8 +1,8 @@
 build:
   docker:
     web: python_backend/Dockerfile
-  whatsapp: yarn --cwd ./nestjs_server build
+    whatsapp: nestjs_server/Dockerfile
   
 run:
   web: uvicorn main:app --host 0.0.0.0 --port $PORT
-  whatsapp: yarn --cwd ./nestjs_server start:prod
+  whatsapp: npm run start:prod
